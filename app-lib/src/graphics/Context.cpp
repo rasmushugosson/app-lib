@@ -2,8 +2,8 @@
 
 #include "Window.h"
 
-ae::Context::Context(GLFWwindow* pWindow)
-	: m_pWindow(pWindow), m_GraphicsAPI("Undefined"), m_GraphicsVersion("Undefined"), m_GraphicsCard("Undefined"), 
+ae::Context::Context(Window& window)
+	: m_Window(window), m_GraphicsAPI("Undefined"), m_GraphicsVersion("Undefined"), m_GraphicsCard("Undefined"), 
 	m_GraphicsVendor("Undefined"), m_Created(false)
 {
 }

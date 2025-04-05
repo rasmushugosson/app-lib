@@ -5,8 +5,8 @@
 #include "OpenGLManager.h"
 #include "window/WindowManager.h"
 
-ae::OpenGLContext::OpenGLContext(GLFWwindow* pWindow)
-	: Context(pWindow)
+ae::OpenGLContext::OpenGLContext(Window& window)
+	: Context(window)
 {
 }
 
@@ -16,7 +16,7 @@ ae::OpenGLContext::~OpenGLContext()
 
 bool ae::OpenGLContext::CreateImpl()
 {
-	glfwMakeContextCurrent(m_pWindow);
+	glfwMakeContextCurrent(m_Window.GetWindow());
 
 	OpenGLManager::Get().AddContext();
 
@@ -32,7 +32,7 @@ void ae::OpenGLContext::ActivateImpl()
 {
 	WindowManager::Get().DeactivateAllWindows();
 
-	glfwMakeContextCurrent(m_pWindow);
+	glfwMakeContextCurrent(m_Window.GetWindow());
 }
 
 void ae::OpenGLContext::DeactivateImpl()

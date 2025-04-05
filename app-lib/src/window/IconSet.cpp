@@ -32,7 +32,7 @@ void ae::IconSetContainer::AddImage(uint8_t* pPixels, int32_t width, int32_t hei
 	m_Images.push_back(image);
 }
 
-ae::IconSet::IconSet(std::initializer_list<std::string> paths)
+ae::IconSet::IconSet(const std::initializer_list<std::string>& paths)
 	: m_pContainer(nullptr)
 {
 	for (const std::string& path : paths)

@@ -7,7 +7,7 @@ namespace ae
 	class OpenGLContext : public Context
 	{
 	public:
-		OpenGLContext(GLFWwindow* pWindow);
+		OpenGLContext(Window& window);
 		OpenGLContext(const OpenGLContext&) = delete;
 		OpenGLContext& operator=(const OpenGLContext&) = delete;
 		~OpenGLContext();

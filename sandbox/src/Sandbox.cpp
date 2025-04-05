@@ -20,6 +20,13 @@ static ae::Window* s_pWindow = nullptr;
 static void OnInterfaceUpdate()
 {
 	// This function is called every frame as the ImGui interface is updated
+	std::shared_ptr<ae::Context> pContext = s_pWindow->GetContext().lock();
+
+	// Check if the context is valid
+	if (!pContext)
+	{
+		return;
+	}	
 
 	// A simple window
 	ImGui::Begin("A window");
@@ -36,10 +43,10 @@ static void OnInterfaceUpdate()
 	ImGui::NewLine();
 
 	// Graphics data can be accessed through the Window's Context
-	ImGui::Text("Graphics API: %s", s_pWindow->GetContext().GetGraphicsAPI().c_str());
-	ImGui::Text("Graphics API Version: %s", s_pWindow->GetContext().GetGraphicsVersion().c_str());
-	ImGui::Text("Graphics Card: %s", s_pWindow->GetContext().GetGraphicsCard().c_str());
-	ImGui::Text("Graphics Vendor: %s", s_pWindow->GetContext().GetGraphicsVendor().c_str());	
+	ImGui::Text("Graphics API: %s", pContext->GetGraphicsAPI().c_str());
+	ImGui::Text("Graphics API Version: %s", pContext->GetGraphicsVersion().c_str());
+	ImGui::Text("Graphics Card: %s", pContext->GetGraphicsCard().c_str());
+	ImGui::Text("Graphics Vendor: %s", pContext->GetGraphicsVendor().c_str());
 
 	ImGui::NewLine();
 
@@ -74,7 +81,7 @@ int main()
 		windowDesc.fullscreen = false;
 		windowDesc.vsync = true;
 		windowDesc.fps = 165; // Not actually used since vsync is enabled
-		windowDesc.graphicsAPI = ae::GraphicsAPI::OPENGL;
+		windowDesc.graphicsAPI = ae::GraphicsAPI::VULKAN;
 
 		// We can now create a window with the descriptor
 		ae::Window window(windowDesc);
@@ -114,6 +121,9 @@ int main()
 			// We can then update the window each frame
 			window.SetActive();
 			window.Clear();
+
+			// Render things
+
 			window.Update();
 		}
 

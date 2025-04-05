@@ -42,6 +42,8 @@ void ae::Interface::Create()
     //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
 	io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;	    // Disable changing mouse cursor
 
+    LoadFonts();
+
 	if (!CreateImpl())
 	{
 		AE_THROW_GRAPHICS_ERROR("Failed to create Interface for Window");
@@ -49,9 +51,21 @@ void ae::Interface::Create()
 	}
 
     SetImGuiStyle();
-	LoadFonts();
 
 	m_Created = true;
+}
+
+void ae::Interface::Prepare()
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG_CONSOLE(AE_WARNING, "Tried to prepare Interface but it was not created");
+        return;
+    }
+#endif // AE_DEBUG
+    ImGui::SetCurrentContext(m_pContext);
+    PrepareImpl();
 }
 
 void ae::Interface::Update()
@@ -70,23 +84,25 @@ void ae::Interface::Update()
 
     ImGui::SetCurrentContext(m_pContext);
 
-	PrepareFrame();
-
 	ImGui::NewFrame();
 
 	m_OnInterfaceUpdate();
 
 	ImGui::Render();
+}
 
-	FinishFrame();
+void ae::Interface::Finish()
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG_CONSOLE(AE_WARNING, "Tried to finish Interface but it was not created");
+        return;
+    }
+#endif // AE_DEBUG
+    ImGui::SetCurrentContext(m_pContext);
 
-	ImGuiIO& io = ImGui::GetIO();
-	if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-	{
-		GLFWwindow* backup_current_context = glfwGetCurrentContext();
-		
-		glfwMakeContextCurrent(backup_current_context);
-	}
+    FinishImpl();
 }
 
 void ae::Interface::Destroy()

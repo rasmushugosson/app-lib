@@ -414,8 +414,14 @@ namespace ae
 #define AE_CONTROLLER_BUTTON_B               1
 #define AE_CONTROLLER_BUTTON_X               2
 #define AE_CONTROLLER_BUTTON_Y               3
+#define AE_CONTROLLER_BUTTON_TRIANGLE        AE_CONTROLLER_BUTTON_Y
+#define AE_CONTROLLER_BUTTON_CIRCLE          AE_CONTROLLER_BUTTON_B
+#define AE_CONTROLLER_BUTTON_SQUARE          AE_CONTROLLER_BUTTON_X
+#define AE_CONTROLLER_BUTTON_CROSS           AE_CONTROLLER_BUTTON_A
 #define AE_CONTROLLER_BUTTON_LEFT_BUMPER     4
 #define AE_CONTROLLER_BUTTON_RIGHT_BUMPER    5
+#define AE_CONTROLLER_R1					 AE_CONTROLLER_BUTTON_RIGHT_BUMPER	
+#define AE_CONTROLLER_L1					 AE_CONTROLLER_BUTTON_LEFT_BUMPER
 #define AE_CONTROLLER_BUTTON_BACK            6
 #define AE_CONTROLLER_BUTTON_START           7
 #define AE_CONTROLLER_BUTTON_GUIDE           8
@@ -429,10 +435,10 @@ namespace ae
 
 	enum class ControllerButton
 	{
-		A = AE_CONTROLLER_BUTTON_A,
-		B = AE_CONTROLLER_BUTTON_B,
-		X = AE_CONTROLLER_BUTTON_X,
-		Y = AE_CONTROLLER_BUTTON_Y,
+		BUTTON_ONE = AE_CONTROLLER_BUTTON_A,
+		BUTTON_TWO = AE_CONTROLLER_BUTTON_B,
+		BUTTON_THREE = AE_CONTROLLER_BUTTON_X,
+		BUTTON_FOUR = AE_CONTROLLER_BUTTON_Y,
 		LEFT_BUMPER = AE_CONTROLLER_BUTTON_LEFT_BUMPER,
 		RIGHT_BUMPER = AE_CONTROLLER_BUTTON_RIGHT_BUMPER,
 		BACK = AE_CONTROLLER_BUTTON_BACK,
@@ -508,7 +514,7 @@ namespace ae
 	class IconSet
 	{
 	public:
-		IconSet(std::initializer_list<std::string> paths);
+		IconSet(const std::initializer_list<std::string>& paths);
 		IconSet(const IconSet& icon);
 		~IconSet();
 
@@ -555,7 +561,7 @@ namespace ae
 	class Context
 	{
 	public:
-		Context(GLFWwindow* pWindow);
+		Context(Window& window);
 		Context(const Context&) = delete;
 		Context& operator=(const Context&) = delete;
 		virtual ~Context();
@@ -575,7 +581,7 @@ namespace ae
 		virtual void DeactivateImpl() = 0;
 		virtual void DestroyImpl() = 0;
 	protected:
-		GLFWwindow* m_pWindow;
+		Window& m_Window;
 		std::string m_GraphicsAPI;
 		std::string m_GraphicsVersion;
 		std::string m_GraphicsCard;
@@ -607,23 +613,17 @@ namespace ae
 		void Close();
 		bool ShouldClose() const;
 
+		inline const WindowDesc& GetDesc() { return m_Desc; }
+
 		inline GLFWwindow* GetWindow() const { return m_pWindow; }
 
-		inline bool IsFocused() const { return m_Focused; }
-
-		inline Context& GetContext() const {
-#ifdef AE_DEBUG
-			if (!m_Created)
-			{
-				AE_LOG_CONSOLE(AE_ERROR, "Failed to get Window context, the Window has not been created");
-			}
-#endif // AE_DEBUG
-			return *m_pContext;
-		}
+		inline std::weak_ptr<Context> GetContext() const { return m_pContext; }
 
 		inline Keyboard& GetKeyboard() { return m_Keyboard; }
 		inline Mouse& GetMouse() { return m_Mouse; }
 		inline Controller& GetController(uint32_t index) { return m_Controllers[index]; }
+
+		inline bool IsFocused() const { return m_Focused; }
 
 		inline uint32_t GetWidth() const { return m_Desc.width; }
 		inline uint32_t GetHeight() const { return m_Desc.height; }
@@ -645,6 +645,7 @@ namespace ae
 		inline bool IsActive() const { return m_Active; }
 		void SetActive();
 
+		inline const float* GetClearColor() const { return m_ClearColor; }
 		inline void SetClearColor(float r, float g, float b, float a) { m_ClearColor[0] = r; m_ClearColor[1] = g; m_ClearColor[2] = b; m_ClearColor[3] = a; }
 		inline void SetClearColor(float color[4]) { m_ClearColor[0] = color[0]; m_ClearColor[1] = color[1]; m_ClearColor[2] = color[2]; m_ClearColor[3] = color[3]; }
 
@@ -735,7 +736,7 @@ namespace ae
 		Mouse m_Mouse;
 		std::vector<Controller> m_Controllers;
 
-		std::unique_ptr<Context> m_pContext;
+		std::shared_ptr<Context> m_pContext;
 		float m_ClearColor[4];
 		std::unique_ptr<Interface> m_pInterface;
 

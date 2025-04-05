@@ -28,13 +28,13 @@ void ae::OpenGLInterface::DestroyImpl()
 	ImGui_ImplGlfw_Shutdown();
 }
 
-void ae::OpenGLInterface::PrepareFrame()
+void ae::OpenGLInterface::PrepareImpl()
 {
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 }
 
-void ae::OpenGLInterface::FinishFrame()
+void ae::OpenGLInterface::FinishImpl()
 {
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

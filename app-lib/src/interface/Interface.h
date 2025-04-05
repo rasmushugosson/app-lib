@@ -20,7 +20,11 @@ namespace ae
 		virtual ~Interface();
 
 		void Create();
+
+		void Prepare();
 		void Update();
+		void Finish();
+
 		void Destroy();
 
 		void SendOnKeyEvent(int key, int scancode, int action, int mods) const;
@@ -44,8 +48,8 @@ namespace ae
 		virtual bool CreateImpl() = 0;
 		virtual void DestroyImpl() = 0;
 
-		virtual void PrepareFrame() = 0;
-		virtual void FinishFrame() = 0;
+		virtual void PrepareImpl() = 0;
+		virtual void FinishImpl() = 0;
 	private:
 		void SetImGuiStyle();
 		void LoadFonts();

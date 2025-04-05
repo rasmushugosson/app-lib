@@ -17,7 +17,7 @@ namespace ae
 		virtual bool CreateImpl() override;
 		virtual void DestroyImpl() override;
 
-		virtual void PrepareFrame() override;
-		virtual void FinishFrame() override;
+		virtual void PrepareImpl() override;
+		virtual void FinishImpl() override;
 	};
 }

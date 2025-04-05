@@ -157,7 +157,17 @@ void ae::Window::Clear() const
 	else if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
 	{
 #ifdef AE_VULKAN
-		// Clear Vulkan
+		std::shared_ptr<ae::VulkanContext> pContext = std::dynamic_pointer_cast<ae::VulkanContext>(m_pContext);
+#ifdef AE_DEBUG
+		if (!pContext)
+		{
+			AE_THROW_VULKAN_ERROR("Failed to create Vulkan context, context is not Vulkan");
+		}
+#endif // AE_DEBUG
+		pContext->WaitForPreviousFrame();
+		pContext->AquireNextImage();
+		pContext->ResetCommandBuffer();
+		pContext->BeginRenderPass();
 #else // AE_VULKAN
 		AE_THROW_VULKAN_ERROR(AE_VULKAN_NOT_FOUND_MESSAGE);
 #endif // AE_VULKAN
@@ -178,7 +188,9 @@ void ae::Window::Update()
 
 	glfwPollEvents();
 
+	m_pInterface->Prepare();
 	m_pInterface->Update();
+	m_pInterface->Finish();
 
 	m_FrameTime = m_FrameTimer.GetElapsedTime();
 	m_AverageFrameTime = m_AverageFrameTime * 0.99 + m_FrameTime * 0.01;
@@ -457,7 +469,7 @@ void ae::Window::InitVulkan()
 
 void ae::Window::CreateOpenGL()
 {
-	m_pContext = std::make_unique<ae::OpenGLContext>(m_pWindow);
+	m_pContext = std::make_shared<ae::OpenGLContext>(*this);
 	m_pContext->Create();
 	m_Active = true;
 
@@ -500,6 +512,9 @@ void ae::Window::CreateVulkan()
 		AE_THROW_GLFW_ERROR("Vulkan is not supported");
 	}
 
+	m_pContext = std::make_shared<ae::VulkanContext>(*this);
+	m_pContext->Create();
+
 	if (m_Desc.vsync)
 	{
 		m_Desc.vsync = false;
@@ -519,6 +534,9 @@ void ae::Window::CreateVulkan()
 	m_Fps = static_cast<double>(m_Desc.fps);
 	m_AverageFrameTime = 1.0 / static_cast<double>(m_Desc.fps);
 	m_AverageFrameDuration = 1.0 / static_cast<double>(m_Desc.fps);
+
+	m_pInterface = std::make_unique<ae::VulkanInterface>(*this);
+	m_pInterface->Create();
 }
 #endif // AE_VULKAN
 
@@ -530,6 +548,16 @@ void ae::Window::UpdateOpenGL()
 #ifdef AE_VULKAN
 void ae::Window::UpdateVulkan()
 {
+	std::shared_ptr<ae::VulkanContext> pContext = std::dynamic_pointer_cast<ae::VulkanContext>(m_pContext);
+#ifdef AE_DEBUG
+	if (!pContext)
+	{
+		AE_THROW_VULKAN_ERROR("Failed to update Vulkan context, context is not Vulkan");
+	}
+#endif // AE_DEBUG
+	pContext->EndRenderPass();
+	pContext->SubmitCommandBuffer();
+	pContext->PresentImage();
 }
 #endif // AE_VULKAN
 
@@ -543,6 +571,9 @@ void ae::Window::DestroyOpenGL()
 #ifdef AE_VULKAN
 void ae::Window::DestroyVulkan()
 {
+	m_pInterface->Destroy();
+
+	m_pContext->Destroy();
 }
 #endif // AE_VULKAN
 

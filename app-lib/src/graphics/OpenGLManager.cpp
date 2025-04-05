@@ -5,7 +5,7 @@
 ae::OpenGLManager ae::OpenGLManager::m_Instance;
 
 ae::OpenGLManager::OpenGLManager()
-	: m_ContextCount(0), m_Version("Undefined"), m_Renderer("Undefined"), m_Vendor("Undefined")
+	: m_ContextCount(0), m_Version("None"), m_Renderer("None"), m_Vendor("None")
 {
 }
 
