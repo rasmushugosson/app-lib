@@ -81,7 +81,7 @@ int main()
 		windowDesc.fullscreen = false;
 		windowDesc.vsync = true;
 		windowDesc.fps = 165; // Not actually used since vsync is enabled
-		windowDesc.graphicsAPI = ae::GraphicsAPI::VULKAN;
+		windowDesc.graphicsAPI = ae::GraphicsAPI::OPENGL;
 
 		// We can now create a window with the descriptor
 		ae::Window window(windowDesc);

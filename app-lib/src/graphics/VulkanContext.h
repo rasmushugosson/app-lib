@@ -84,6 +84,8 @@ namespace ae
 
 		void CreateSyncObjects();
 		void DestroySyncObjects();
+
+		void RecreateSwapChain();
 	private:
 		VkSurfaceKHR m_Surface;
 

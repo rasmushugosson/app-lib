@@ -106,7 +106,15 @@ void ae::VulkanContext::PresentImage()
 	presentInfo.pSwapchains = &m_SwapChain;
 	presentInfo.pImageIndices = &m_CurrentImageIndex;
 
-	if (vkQueuePresentKHR(VulkanManager::Get().GetGraphicsQueue(), &presentInfo) != VK_SUCCESS)
+	VkResult result = vkQueuePresentKHR(VulkanManager::Get().GetGraphicsQueue(), &presentInfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+	{
+		// Could be due to window resize
+		RecreateSwapChain();
+	}
+
+	else if (result != VK_SUCCESS)
 	{
 		AE_THROW_VULKAN_ERROR("Failed to present Vulkan image");
 	}
@@ -517,4 +525,22 @@ void ae::VulkanContext::DestroySyncObjects()
 	m_ImageAvailableSemaphores.clear();
 	m_RenderFinishedSemaphores.clear();
 	m_InFlightFences.clear();
+}
+
+void ae::VulkanContext::RecreateSwapChain()
+{
+	vkDeviceWaitIdle(VulkanManager::Get().GetDevice());
+
+	DestroyFramebuffers();
+	DestroyRenderPass();	
+	DestroySwapChainImageViews();
+	DestroySwapChain();
+
+	CreateSwapChain();
+	CreateSwapChainImageViews();
+	CreateRenderPass();
+	CreateFramebuffers();
+
+	DestroyCommandBuffers();
+	CreateCommandBuffers();
 }
