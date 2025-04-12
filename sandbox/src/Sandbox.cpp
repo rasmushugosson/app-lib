@@ -13,6 +13,7 @@
 #include "Vulkan.h" // Not actually used in this example
 #include "OpenGL.h" // Not actually used in this example
 #include "OpenAL.h" // Not actually used in this example
+#include "Maths.h"
 
 // Static pointer so the ImGui interface can access the Window
 static ae::Window* s_pWindow = nullptr;
@@ -141,4 +142,15 @@ int main()
 		// We can log the exception to the console
 		AE_LOG_CONSOLE_ALL(AE_ERROR, e.what());
 	}
+
+	// We can also access GLM math functions 
+	glm::vec2 a(1.0f, 2.0f);
+	glm::vec2 b(3.0f, 4.0f);
+
+	// And perform some operations to see that it works
+	glm::vec2 c = a + b;
+	AE_LOG_CONSOLE(AE_TRACE, "c: vec2[" << c.x << ", " << c.y << "]");
+
+	// Basic GLM types can also be logged directly to the console
+	AE_LOG_CONSOLE(AE_TRACE, "c: " << c);
 }

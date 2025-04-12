@@ -41,6 +41,15 @@ project "Log"
     pchheader "general/pch.h"
     pchsource "../log-lib/src/general/pch.cpp" 
 
+project "GLM"
+    kind "Utility"
+    language "C++"
+    location "../vendor/glm"
+
+    files { "../vendor/glm/**.hpp", "../vendor/glm/**.h" }
+
+    includedirs { "../vendor/glm" }
+
 project "App"
     kind "StaticLib"
     language "C++"
@@ -50,9 +59,11 @@ project "App"
 
     files { "../app-lib/src/**.cpp", "../app-lib/src/**.h", "../app-lib/include/**.h", "../app-lib/vendor/**.cpp", "../app-lib/vendor/**.h" }
 
-    includedirs { "../dep/GLFW/include", "../dep/GLEW/include", "../dep/OpenALSoft/include", "../log-lib/include", "../app-lib/include", "../app-lib/src", "../app-lib/vendor" }
+    includedirs { "../dep/GLFW/include", "../dep/GLEW/include", "../dep/OpenALSoft/include", "../log-lib/include", "../app-lib/include", "../app-lib/src", "../app-lib/vendor", "../vendor/glm" }
 
     links { "../dep/GLFW/lib/glfw3.lib", "opengl32.lib", "../dep/GLEW/lib/glew32s.lib", "Log" }
+
+    dependson { "GLM" }
 
     if vulkanSDK then
         defines { "AE_VULKAN" }
@@ -77,12 +88,14 @@ project "Sandbox"
     objdir "obj/%{cfg.buildcfg}"
   
     files { "../sandbox/src/**.cpp", "../sandbox/src/**.h" }
-    includedirs { "../dep/GLFW/include", "../dep/GLEW/include", "../dep/OpenALSoft/include", "../log-lib/include", "../app-lib/include", "../sandbox/src" }
+    includedirs { "../dep/GLFW/include", "../dep/GLEW/include", "../dep/OpenALSoft/include", "../log-lib/include", "../app-lib/include", "../sandbox/src", "../vendor/glm" }
 
     pchheader "general/pch.h"
     pchsource "../sandbox/src/general/pch.cpp" 
 
     links { "../dep/GLFW/lib/glfw3.lib", "opengl32.lib", "../dep/GLEW/lib/glew32s.lib", "Log", "App" }
+
+    dependson { "GLM" } 
 
     if vulkanSDK then
         defines { "AE_VULKAN" }

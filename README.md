@@ -2,12 +2,12 @@
 
 ## General
 
-This library combines nine well-known APIs and libraries with additional wrapper and utility functionality. The aim of this library is cover the basic boilerplate code required to use them together for graphics applications. The APIs and libraries are:
+This library combines ten well-known APIs and libraries with additional wrapper and utility functionality. The aim of this library is cover the basic boilerplate code required to use them together for graphics applications. The APIs and libraries are:
 [OpenGL](https://www.opengl.org/), [GLFW](https://github.com/glfw/glfw), [GLEW](https://github.com/nigels-com/glew),
 [Vulkan](https://www.vulkan.org/), [STB_Image](https://github.com/nothings/stb/blob/master/stb_image.h),
 [STB_Image_Write](https://github.com/nothings/stb/blob/master/stb_image_write.h),
 [STB_Vorbis](https://github.com/nothings/stb/blob/master/stb_vorbis.c),
-[Dear ImGui](https://github.com/ocornut/imgui), and [OpenAL Soft](https://github.com/kcat/openal-soft).
+[Dear ImGui](https://github.com/ocornut/imgui), [OpenAL Soft](https://github.com/kcat/openal-soft) and [GLM](https://github.com/g-truc/glm).
 
 For details on how these components are used and which ones are required, see the
 [Third-party APIs/libraries](#third-party-apislibraries) section. The library is built using
@@ -41,7 +41,7 @@ If you want to integrate this library into your own project, the easiest way is 
 
 ## Usage
 
-There are two main parts to this library: the `Window` class in the `Window.h` header file and the other utility classes and functions in the other header files.
+There are two main parts to this library: the `Window` class in the `Window.h` header file and the other utility classes and functions in the other header files. Header files for each of the third-party libraries are also provided as is.
 
 ### Window Class
 
@@ -76,7 +76,7 @@ struct WindowDesc
 
 ### Additional Header Files
 
-The other header files in the `app-lib/include` folder contain utility classes and functions that can be used to create graphics applications. `Files.h` is mostly a wrapper around [STB](https://github.com/nothings/stb) containing classes and methods for reading and writing image and audio files. The `OpenGL.h`, `Vulkan.h` and `OpenAL.h` header files are all similar in structure, with each containing a macro that checks and throws custom exceptions for the respective API calls, in addition to forward including the respective API headers. Lastly, the `ImGui.h` header is the original [Dear ImGui](https://github.com/ocornut/imgui) header file with some modifications to work with project structure.
+The other header files in the `app-lib/include` folder contain utility classes and functions that can be used to create graphics applications. `Files.h` is mostly a wrapper around [STB](https://github.com/nothings/stb) containing classes and methods for reading and writing image and audio files. The `OpenGL.h`, `Vulkan.h` and `OpenAL.h` header files are all similar in structure, with each containing a macro that checks and throws custom exceptions for the respective API calls, in addition to forward including the respective API headers. Lastly, the `ImGui.h` header is the original [Dear ImGui](https://github.com/ocornut/imgui) header file with some modifications to work with project structure, and the same is true for the [GLM](https://github.com/g-truc/glm) library.
 
 ### Code Example
 
@@ -242,6 +242,10 @@ For more information, see:
 
 Please ensure you **comply with the LGPL** requirements if you distribute this library, particularly allowing users to swap in their own OpenAL Soft build.
 
+### GLM
+
+GLM is a header-only math library for graphics applications. It is included as source code in the `vendor/glm` folder, and built as a separate project. See the [official repo](https://github.com/g-truc/glm).
+
 ### Third-party licenses
 
 If you plan to use this library in your own projects, you must comply with the original licenses of:
@@ -251,8 +255,9 @@ If you plan to use this library in your own projects, you must comply with the o
 - [STB libraries](https://github.com/nothings) (**Public Domain / MIT**),
 - [Dear ImGui](https://github.com/ocornut) (**MIT**),
 - [OpenAL Soft](https://github.com/kcat) (**LGPL v2.1**).
+- [GLM](https://github.com/g-truc) (**MIT**).
 
-All license texts can be found in the `licenses` folder, and proper credit must be given to the respective authors.
+All license texts can be found in the `licenses` folder, and proper credit must be given to the respective authors if this library is used.
 
 ## Included Assets
 
