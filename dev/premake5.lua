@@ -41,6 +41,17 @@ project "Log"
     pchheader "general/pch.h"
     pchsource "../log-lib/src/general/pch.cpp" 
 
+project "STB"
+    kind "StaticLib"
+    language "C++"
+    cppdialect "C++20"
+    targetdir "bin/%{cfg.buildcfg}"
+    objdir "obj/%{cfg.buildcfg}"
+
+    files { "../vendor/stb/**.cpp", "../vendor/stb/**.c", "../vendor/stb/**.h" }
+
+    includedirs { "../vendor/stb" }
+
 project "GLM"
     kind "Utility"
     language "C++"
@@ -59,9 +70,9 @@ project "App"
 
     files { "../app-lib/src/**.cpp", "../app-lib/src/**.h", "../app-lib/include/**.h", "../app-lib/vendor/**.cpp", "../app-lib/vendor/**.h" }
 
-    includedirs { "../dep/GLFW/include", "../dep/GLEW/include", "../dep/OpenALSoft/include", "../log-lib/include", "../app-lib/include", "../app-lib/src", "../app-lib/vendor", "../vendor/glm" }
+    includedirs { "../dep/GLFW/include", "../dep/GLEW/include", "../dep/OpenALSoft/include", "../log-lib/include", "../app-lib/include", "../app-lib/src", "../app-lib/vendor", "../vendor/glm", "../vendor/stb" }
 
-    links { "../dep/GLFW/lib/glfw3.lib", "opengl32.lib", "../dep/GLEW/lib/glew32s.lib", "Log" }
+    links { "../dep/GLFW/lib/glfw3.lib", "opengl32.lib", "../dep/GLEW/lib/glew32s.lib", "Log", "STB" }
 
     dependson { "GLM" }
 

@@ -4,7 +4,7 @@
 
 #include <filesystem>
 
-#include "stb_vorbis/stb_vorbis.h"
+#include "stb_vorbis.h"
 
 ae::AudioFile::AudioFile(const std::string& path)
 	: m_Path(AE_FILE_PATH(path))

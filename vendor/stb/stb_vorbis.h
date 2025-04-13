@@ -1,6 +1,6 @@
 #pragma once
 
-extern "C" // Ensure C++ compatibility
+extern "C"
 { 
 #include "stb_vorbis.c" 
 }

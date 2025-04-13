@@ -4,8 +4,8 @@
 
 #include <filesystem>
 
-#include "stb_image/stb_image.h"
-#include "stb_image/stb_image_write.h"
+#include "stb_image.h"
+#include "stb_image_write.h"
 
 template<typename T>
 ae::ImageFile<T>::ImageFile(const std::string& path)
