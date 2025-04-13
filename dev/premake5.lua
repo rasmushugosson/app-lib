@@ -61,6 +61,22 @@ project "GLM"
 
     includedirs { "../vendor/glm" }
 
+project "ImGui"
+    kind "StaticLib"
+    language "C++"
+    cppdialect "C++20"
+    targetdir "bin/%{cfg.buildcfg}"
+    objdir "obj/%{cfg.buildcfg}"
+
+    files { "../vendor/imgui/*.cpp", "../vendor/imgui/*.h", "../vendor/imgui/backends/imgui_impl_glfw.cpp", "../vendor/imgui/backends/imgui_impl_glfw.h", "../vendor/imgui/backends/imgui_impl_opengl3.cpp", "../vendor/imgui/backends/imgui_impl_opengl3.h", "../vendor/imgui/backends/imgui_impl_opengl3_loader.h" }
+
+    includedirs { "../vendor", "../vendor/imgui", "../dep/GLFW/include" }
+
+    if vulkanSDK then
+        files { "../vendor/imgui/backends/imgui_impl_vulkan.cpp", "../vendor/imgui/backends/imgui_impl_vulkan.h" }
+        includedirs { vulkanSDK .. "/Include" }
+    end 
+
 project "App"
     kind "StaticLib"
     language "C++"
@@ -68,11 +84,11 @@ project "App"
     targetdir "bin/%{cfg.buildcfg}"
     objdir "obj/%{cfg.buildcfg}"
 
-    files { "../app-lib/src/**.cpp", "../app-lib/src/**.h", "../app-lib/include/**.h", "../app-lib/vendor/**.cpp", "../app-lib/vendor/**.h" }
+    files { "../app-lib/src/**.cpp", "../app-lib/src/**.h", "../app-lib/include/**.h" }
 
-    includedirs { "../dep/GLFW/include", "../dep/GLEW/include", "../dep/OpenALSoft/include", "../log-lib/include", "../app-lib/include", "../app-lib/src", "../app-lib/vendor", "../vendor/glm", "../vendor/stb" }
+    includedirs { "../dep/GLFW/include", "../dep/GLEW/include", "../dep/OpenALSoft/include", "../log-lib/include", "../app-lib/include", "../app-lib/src", "../vendor/glm", "../vendor/stb", "../vendor/imgui" }
 
-    links { "../dep/GLFW/lib/glfw3.lib", "opengl32.lib", "../dep/GLEW/lib/glew32s.lib", "Log", "STB" }
+    links { "../dep/GLFW/lib/glfw3.lib", "opengl32.lib", "../dep/GLEW/lib/glew32s.lib", "Log", "STB", "ImGui" }
 
     dependson { "GLM" }
 
@@ -99,7 +115,7 @@ project "Sandbox"
     objdir "obj/%{cfg.buildcfg}"
   
     files { "../sandbox/src/**.cpp", "../sandbox/src/**.h" }
-    includedirs { "../dep/GLFW/include", "../dep/GLEW/include", "../dep/OpenALSoft/include", "../log-lib/include", "../app-lib/include", "../sandbox/src", "../vendor/glm" }
+    includedirs { "../dep/GLFW/include", "../dep/GLEW/include", "../dep/OpenALSoft/include", "../log-lib/include", "../app-lib/include", "../sandbox/src", "../vendor/glm", "../vendor/imgui" }
 
     pchheader "general/pch.h"
     pchsource "../sandbox/src/general/pch.cpp" 
