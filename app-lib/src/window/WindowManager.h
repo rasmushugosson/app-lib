@@ -12,17 +12,6 @@
 
 namespace ae
 {
-	class GLFWError : public std::runtime_error
-	{
-	public:
-		explicit GLFWError(const std::string& file, uint32_t line, const std::ostringstream& message)
-			: std::runtime_error(FormatError("GLFW error", file, line, message))
-		{
-		}
-	};
-
-#define AE_THROW_GLFW_ERROR(m) throw ae::GLFWError(__FILE__, __LINE__, std::ostringstream() << m);
-
 	class WindowManager
 	{
 	public:

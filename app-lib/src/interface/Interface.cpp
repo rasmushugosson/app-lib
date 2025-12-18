@@ -1,58 +1,55 @@
+#include "Files.h"
+#include "Interface.h"
+#include "backends/imgui_impl_glfw.h"
 #include "general/pch.h"
 
-#include "Interface.h"
-
-#include "ImGui.h"
-#include "backends/imgui_impl_glfw.h"
-
-#include "Files.h"
-
-ae::Interface::Interface(Window& window)
-	: m_Window(window),  m_pContext(nullptr), m_OnInterfaceUpdate(nullptr), m_Created(false)
+ae::Interface::Interface(Window &window)
+    : m_Window(window), m_pContext(nullptr), m_OnInterfaceUpdate(nullptr), m_Created(false)
 {
 }
 
 ae::Interface::~Interface()
 {
 #ifdef AE_DEBUG
-	if (m_Created)
-	{
-		AE_LOG_CONSOLE(AE_WARNING, "Interface was not destroyed before being deleted");
-	}
+    if (m_Created)
+    {
+        AE_LOG_WARNING("Interface was not destroyed before being deleted");
+    }
 #endif // AE_DEBUG
 }
 
 void ae::Interface::Create()
 {
 #ifdef AE_DEBUG
-	if (m_Created)
-	{
-		AE_LOG_CONSOLE(AE_WARNING, "Tried to create Interface but it was already created");
-		return;
-	}
+    if (m_Created)
+    {
+        AE_LOG_WARNING("Tried to create Interface but it was already created");
+        return;
+    }
 #endif // AE_DEBUG
 
     IMGUI_CHECKVERSION();
     m_pContext = ImGui::CreateContext();
     ImGui::SetCurrentContext(m_pContext);
 
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
-	io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;	    // Disable changing mouse cursor
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;     // Enable Docking
+    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+    io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange; // Disable changing mouse cursor
 
     LoadFonts();
 
-	if (!CreateImpl())
-	{
-		AE_THROW_GRAPHICS_ERROR("Failed to create Interface for Window");
-		return;
-	}
+    if (!CreateImpl())
+    {
+        AE_THROW_RUNTIME_ERROR("Failed to create Interface for Window");
+        return;
+    }
 
     SetImGuiStyle();
 
-	m_Created = true;
+    m_Created = true;
 }
 
 void ae::Interface::Prepare()
@@ -60,7 +57,7 @@ void ae::Interface::Prepare()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_CONSOLE(AE_WARNING, "Tried to prepare Interface but it was not created");
+        AE_LOG_WARNING("Tried to prepare Interface but it was not created");
         return;
     }
 #endif // AE_DEBUG
@@ -71,11 +68,11 @@ void ae::Interface::Prepare()
 void ae::Interface::Update()
 {
 #ifdef AE_DEBUG
-	if (!m_Created)
-	{
-		AE_LOG_CONSOLE(AE_WARNING, "Tried to update Interface but it was not created");
-		return;
-	}
+    if (!m_Created)
+    {
+        AE_LOG_WARNING("Tried to update Interface but it was not created");
+        return;
+    }
 #endif // AE_DEBUG
     if (!m_OnInterfaceUpdate)
     {
@@ -84,11 +81,11 @@ void ae::Interface::Update()
 
     ImGui::SetCurrentContext(m_pContext);
 
-	ImGui::NewFrame();
+    ImGui::NewFrame();
 
-	m_OnInterfaceUpdate();
+    m_OnInterfaceUpdate();
 
-	ImGui::Render();
+    ImGui::Render();
 }
 
 void ae::Interface::Finish()
@@ -96,7 +93,7 @@ void ae::Interface::Finish()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_CONSOLE(AE_WARNING, "Tried to finish Interface but it was not created");
+        AE_LOG_WARNING("Tried to finish Interface but it was not created");
         return;
     }
 #endif // AE_DEBUG
@@ -108,90 +105,90 @@ void ae::Interface::Finish()
 void ae::Interface::Destroy()
 {
 #ifdef AE_DEBUG
-	if (!m_Created)
-	{
-		AE_LOG_CONSOLE(AE_WARNING, "Tried to destroy Interface but it was not created");
-		return;
-	}
+    if (!m_Created)
+    {
+        AE_LOG_WARNING("Tried to destroy Interface but it was not created");
+        return;
+    }
 #endif // AE_DEBUG
     ImGui::SetCurrentContext(m_pContext);
 
-	DestroyImpl();
+    DestroyImpl();
 
     ImGui::DestroyContext(m_pContext);
 
-	m_Created = false;
+    m_Created = false;
 }
 
 void ae::Interface::SendOnKeyEvent(int key, int scancode, int action, int mods) const
 {
     ImGui::SetCurrentContext(m_pContext);
 
-	ImGui_ImplGlfw_KeyCallback(m_Window.GetWindow(), key, scancode, action, mods);
+    ImGui_ImplGlfw_KeyCallback(m_Window.GetWindow(), key, scancode, action, mods);
 }
 
 void ae::Interface::SendOnCharEvent(unsigned int c) const
 {
     ImGui::SetCurrentContext(m_pContext);
 
-	ImGui_ImplGlfw_CharCallback(m_Window.GetWindow(), c);
+    ImGui_ImplGlfw_CharCallback(m_Window.GetWindow(), c);
 }
 
 void ae::Interface::SendOnMouseButtonEvent(int button, int action, int mods) const
 {
     ImGui::SetCurrentContext(m_pContext);
 
-	ImGui_ImplGlfw_MouseButtonCallback(m_Window.GetWindow(), button, action, mods);
-}   
+    ImGui_ImplGlfw_MouseButtonCallback(m_Window.GetWindow(), button, action, mods);
+}
 
 void ae::Interface::SendOnMouseMovedEvent(double x, double y) const
 {
     ImGui::SetCurrentContext(m_pContext);
 
-	ImGui_ImplGlfw_CursorPosCallback(m_Window.GetWindow(), x, y);
+    ImGui_ImplGlfw_CursorPosCallback(m_Window.GetWindow(), x, y);
 }
 
 void ae::Interface::SendOnMouseScrolledEvent(double x, double y) const
 {
     ImGui::SetCurrentContext(m_pContext);
 
-	ImGui_ImplGlfw_ScrollCallback(m_Window.GetWindow(), x, y);
+    ImGui_ImplGlfw_ScrollCallback(m_Window.GetWindow(), x, y);
 }
 
 void ae::Interface::SendOnCursorEnterEvent(int entered) const
 {
     ImGui::SetCurrentContext(m_pContext);
 
-	ImGui_ImplGlfw_CursorEnterCallback(m_Window.GetWindow(), entered);
+    ImGui_ImplGlfw_CursorEnterCallback(m_Window.GetWindow(), entered);
 }
 
 void ae::Interface::SendOnWindowFocusEvent(int focused) const
 {
     ImGui::SetCurrentContext(m_pContext);
 
-	ImGui_ImplGlfw_WindowFocusCallback(m_Window.GetWindow(), focused);
+    ImGui_ImplGlfw_WindowFocusCallback(m_Window.GetWindow(), focused);
 }
 
-void ae::Interface::SendOnMonitorEvent(GLFWmonitor* pMonitor, int event) const
+void ae::Interface::SendOnMonitorEvent(GLFWmonitor *pMonitor, int event) const
 {
     ImGui::SetCurrentContext(m_pContext);
 
-	ImGui_ImplGlfw_MonitorCallback(pMonitor, event);
+    ImGui_ImplGlfw_MonitorCallback(pMonitor, event);
 }
 
 void ae::Interface::SetImGuiStyle()
 {
     ImGui::StyleColorsDark();
 
-    ImGuiStyle& style = ImGui::GetStyle();
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiStyle &style = ImGui::GetStyle();
+    ImGuiIO &io = ImGui::GetIO();
 
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
-	
+
     style.WindowRounding = 16.0f;
     style.FrameRounding = 8.0f;
     style.GrabRounding = 8.0f;
@@ -255,13 +252,13 @@ void ae::Interface::SetImGuiStyle()
     style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.40f, 0.40f, 0.40f, 1.00f);
     style.Colors[ImGuiCol_Separator] = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
     style.Colors[ImGuiCol_SeparatorHovered] = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
-	style.Colors[ImGuiCol_SeparatorActive] = ImVec4(0.70f, 0.70f, 0.70f, 1.00f);
+    style.Colors[ImGuiCol_SeparatorActive] = ImVec4(0.70f, 0.70f, 0.70f, 1.00f);
 }
 
 void ae::Interface::LoadFonts()
 {
-    for (const std::string_view& fontPath : s_FontPaths)
+    for (std::string_view fontPath : s_FontPaths)
     {
-        ImGui::GetIO().Fonts->AddFontFromFileTTF(FormatDevPath(fontPath.data()).c_str(), 14.0f);
+        ImGui::GetIO().Fonts->AddFontFromFileTTF(FormatDevPath(fontPath).c_str(), 14.0f);
     }
 }

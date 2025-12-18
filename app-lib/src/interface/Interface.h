@@ -5,7 +5,7 @@
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 
-#include "ImGui.h"
+#include "DearImGui.h"
 
 #include "Window.h"
 

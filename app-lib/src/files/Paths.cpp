@@ -1,12 +1,12 @@
+#include "Files.h"
 #include "general/pch.h"
 
-#include "Files.h"
-
-std::string ae::FormatDevPath(const std::string& path)
+std::string ae::FormatDevPath(std::string_view path)
 {
-	std::ostringstream oss;
+    return std::string(path);
+}
 
-	oss << "../" << path;
-
-	return oss.str();
+std::string ae::FormatDevPath(const std::string &path)
+{
+    return FormatDevPath(std::string_view{ path });
 }

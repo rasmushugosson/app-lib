@@ -1,60 +1,59 @@
 #include "general/pch.h"
 
-#include "VulkanManager.h"
+#ifdef AE_VULKAN
 
 #include "OpenGL.h"
+#include "VulkanManager.h"
 
 ae::VulkanManager ae::VulkanManager::m_Instance;
 
 ae::VulkanManager::VulkanManager()
-	: m_ContextCount(0), m_Version("None"), m_Renderer("None"), m_Vendor("None"),
-    m_VulkanInstance(VK_NULL_HANDLE), m_PhysicalDevice(VK_NULL_HANDLE), m_Device(VK_NULL_HANDLE), 
-    m_GraphicsQueue(VK_NULL_HANDLE), m_GraphicsQueueFamilyIndex(0)
+    : m_ContextCount(0), m_Version("None"), m_Renderer("None"), m_Vendor("None"), m_VulkanInstance(VK_NULL_HANDLE),
+      m_PhysicalDevice(VK_NULL_HANDLE), m_Device(VK_NULL_HANDLE), m_GraphicsQueue(VK_NULL_HANDLE),
+      m_GraphicsQueueFamilyIndex(0)
 {
 }
 
-ae::VulkanManager::~VulkanManager()
-{
-}
+ae::VulkanManager::~VulkanManager() {}
 
-void ae::VulkanManager::AddContext(const std::string& name)
+void ae::VulkanManager::AddContext(const std::string &name)
 {
-	if (m_ContextCount == 0)
-	{
+    if (m_ContextCount == 0)
+    {
         CreateInstance(name);
-	}
+    }
 
-	m_ContextCount++;
+    m_ContextCount++;
 }
 
 void ae::VulkanManager::RemoveContext()
 {
-	m_ContextCount--;
+    m_ContextCount--;
 
-	if (m_ContextCount == 0)
-	{
+    if (m_ContextCount == 0)
+    {
         DestroyInstance();
-	}
+    }
 }
 
 void ae::VulkanManager::AddSurface(VkSurfaceKHR surface)
 {
-	m_Surfaces.push_back(surface);
+    m_Surfaces.push_back(surface);
 
-	if (m_ContextCount == 1)
-	{
-		CreateDevices();
-		SetGraphicsQueue();
+    if (m_ContextCount == 1)
+    {
+        CreateDevices();
+        SetGraphicsQueue();
 
         FindDeviceData();
-	}
+    }
 
     else
     {
         if (!IsDeviceSuitable(m_PhysicalDevice))
         {
-			RecreateDevices();
-			SetGraphicsQueue();
+            RecreateDevices();
+            SetGraphicsQueue();
 
             FindDeviceData();
         }
@@ -63,23 +62,23 @@ void ae::VulkanManager::AddSurface(VkSurfaceKHR surface)
 
 void ae::VulkanManager::RemoveSurface(VkSurfaceKHR surface)
 {
-	auto it = std::find(m_Surfaces.begin(), m_Surfaces.end(), surface);
+    auto it = std::find(m_Surfaces.begin(), m_Surfaces.end(), surface);
 
-	if (it != m_Surfaces.end())
-	{
-		m_Surfaces.erase(it);
-	}
+    if (it != m_Surfaces.end())
+    {
+        m_Surfaces.erase(it);
+    }
 
-	if (m_Surfaces.size() == 0)
-	{
-		ResetGraphicsQueue();
-		DestroyDevices();
+    if (m_Surfaces.size() == 0)
+    {
+        ResetGraphicsQueue();
+        DestroyDevices();
 
-		ResetDeviceData();
-	}
+        ResetDeviceData();
+    }
 }
 
-void ae::VulkanManager::CreateInstance(const std::string& name)
+void ae::VulkanManager::CreateInstance(const std::string &name)
 {
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -89,11 +88,11 @@ void ae::VulkanManager::CreateInstance(const std::string& name)
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_2;
 
-    std::vector<const char*> extensions = GetRequiredExtensions();
+    std::vector<const char *> extensions = GetRequiredExtensions();
 
     if (!IsValidationLayersSupported())
     {
-        AE_THROW_VULKAN_ERROR("Failed to find required validation layers");
+        AE_THROW_RUNTIME_ERROR("Failed to find required validation layers");
     }
 
     VkInstanceCreateInfo createInfo{};
@@ -111,12 +110,12 @@ void ae::VulkanManager::CreateInstance(const std::string& name)
     else
     {
         createInfo.enabledLayerCount = 0;
-		createInfo.ppEnabledLayerNames = nullptr;
+        createInfo.ppEnabledLayerNames = nullptr;
     }
 
     if (vkCreateInstance(&createInfo, nullptr, &m_VulkanInstance) != VK_SUCCESS)
     {
-        AE_THROW_VULKAN_ERROR("Failed to create Vulkan instance");
+        AE_THROW_RUNTIME_ERROR("Failed to create Vulkan instance");
     }
 }
 
@@ -130,80 +129,80 @@ void ae::VulkanManager::DestroyInstance()
 void ae::VulkanManager::CreateDevices()
 {
     FindPhysicalDevice();
-	CreateLogicalDevice();
+    CreateLogicalDevice();
 }
 
 void ae::VulkanManager::RecreateDevices()
 {
-	DestroyDevices();
-	CreateDevices();
+    DestroyDevices();
+    CreateDevices();
 }
 
 void ae::VulkanManager::DestroyDevices()
 {
-	DestroyLogicalDevice();
-	ResetPhysicalDevice();
+    DestroyLogicalDevice();
+    ResetPhysicalDevice();
 }
 
 void ae::VulkanManager::FindPhysicalDevice()
 {
-	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-	double bestScore = -1000000.0;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    double bestScore = -1000000.0;
 
-	uint32_t deviceCount = 0;
-	vkEnumeratePhysicalDevices(m_VulkanInstance, &deviceCount, nullptr);
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(m_VulkanInstance, &deviceCount, nullptr);
 
-	if (deviceCount == 0)
-	{
-		AE_THROW_VULKAN_ERROR("Failed to find available Vulkan physical devices");
-	}
+    if (deviceCount == 0)
+    {
+        AE_THROW_RUNTIME_ERROR("Failed to find available Vulkan physical devices");
+    }
 
-	std::vector<VkPhysicalDevice> devices(deviceCount);
-	vkEnumeratePhysicalDevices(m_VulkanInstance, &deviceCount, devices.data());
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(m_VulkanInstance, &deviceCount, devices.data());
 
-	for (const auto& device : devices)
-	{
-		double score = RateDevice(device);
+    for (const auto &device : devices)
+    {
+        double score = RateDevice(device);
 
-		if (score > bestScore)
-		{
-			bestScore = score;
-			physicalDevice = device;
-		}
-	}
+        if (score > bestScore)
+        {
+            bestScore = score;
+            physicalDevice = device;
+        }
+    }
 
-	if (bestScore < 0.0)
-	{
-		AE_THROW_VULKAN_ERROR("Failed to find suitable Vulkan physical device");
-	}
+    if (bestScore < 0.0)
+    {
+        AE_THROW_RUNTIME_ERROR("Failed to find suitable Vulkan physical device");
+    }
 
-	m_PhysicalDevice = physicalDevice;
+    m_PhysicalDevice = physicalDevice;
 }
 
 void ae::VulkanManager::ResetPhysicalDevice()
 {
-	m_PhysicalDevice = VK_NULL_HANDLE;
+    m_PhysicalDevice = VK_NULL_HANDLE;
 }
 
 void ae::VulkanManager::CreateLogicalDevice()
 {
-	m_GraphicsQueueFamilyIndex = FindQueueFamilies(m_PhysicalDevice);
+    m_GraphicsQueueFamilyIndex = FindQueueFamilies(m_PhysicalDevice);
 
-	VkDeviceQueueCreateInfo queueCreateInfo{};
-	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfo.queueFamilyIndex = m_GraphicsQueueFamilyIndex;
-	queueCreateInfo.queueCount = 1;
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = m_GraphicsQueueFamilyIndex;
+    queueCreateInfo.queueCount = 1;
 
-	float queuePriority = 1.0f;
-	queueCreateInfo.pQueuePriorities = &queuePriority;
+    float queuePriority = 1.0f;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
 
-	VkPhysicalDeviceFeatures deviceFeatures{};
+    VkPhysicalDeviceFeatures deviceFeatures{};
 
-	VkDeviceCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	createInfo.pQueueCreateInfos = &queueCreateInfo;
-	createInfo.queueCreateInfoCount = 1;
-	createInfo.pEnabledFeatures = &deviceFeatures;
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pQueueCreateInfos = &queueCreateInfo;
+    createInfo.queueCreateInfoCount = 1;
+    createInfo.pEnabledFeatures = &deviceFeatures;
     createInfo.enabledExtensionCount = static_cast<uint32_t>(s_DeviceExtensions.size());
     createInfo.ppEnabledExtensionNames = s_DeviceExtensions.data();
 
@@ -216,20 +215,20 @@ void ae::VulkanManager::CreateLogicalDevice()
     else
     {
         createInfo.enabledLayerCount = 0;
-		createInfo.ppEnabledLayerNames = nullptr;
+        createInfo.ppEnabledLayerNames = nullptr;
     }
 
-	if (vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device) != VK_SUCCESS)
-	{
-		AE_THROW_VULKAN_ERROR("Failed to create Vulkan logical device");
-	}
+    if (vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device) != VK_SUCCESS)
+    {
+        AE_THROW_RUNTIME_ERROR("Failed to create Vulkan logical device");
+    }
 }
 
 void ae::VulkanManager::DestroyLogicalDevice()
 {
-	vkDestroyDevice(m_Device, nullptr);
+    vkDestroyDevice(m_Device, nullptr);
 
-	m_Device = VK_NULL_HANDLE;
+    m_Device = VK_NULL_HANDLE;
 }
 
 void ae::VulkanManager::SetGraphicsQueue()
@@ -243,14 +242,14 @@ void ae::VulkanManager::ResetGraphicsQueue()
     m_GraphicsQueueFamilyIndex = 0;
 }
 
-std::vector<const char*> ae::VulkanManager::GetRequiredExtensions()
+std::vector<const char *> ae::VulkanManager::GetRequiredExtensions()
 {
     uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions;
+    const char **glfwExtensions;
 
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+    std::vector<const char *> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
     return extensions;
 }
@@ -263,12 +262,12 @@ bool ae::VulkanManager::IsValidationLayersSupported()
     std::vector<VkLayerProperties> availableLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-    for (const char* layerName : s_ValidationLayers)
+    for (const char *layerName : s_ValidationLayers)
     {
 
         bool found = false;
 
-        for (const auto& layerProperties : availableLayers)
+        for (const auto &layerProperties : availableLayers)
         {
             if (strcmp(layerName, layerProperties.layerName) == 0)
             {
@@ -305,7 +304,7 @@ bool ae::VulkanManager::IsDeviceSuitable(VkPhysicalDevice device)
         {
             bool supportsAllSurfaces = true;
 
-            for (auto& surf : m_Surfaces)
+            for (auto &surf : m_Surfaces)
             {
                 VkBool32 presentSupport = VK_FALSE;
 
@@ -330,32 +329,32 @@ bool ae::VulkanManager::IsDeviceSuitable(VkPhysicalDevice device)
 
 bool ae::VulkanManager::IsDeviceExtensionsSupported(VkPhysicalDevice device)
 {
-	uint32_t extensionCount;
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
 
-	std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-	vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
 
-	for (const char* extension : s_DeviceExtensions)
-	{
-		bool found = false;
+    for (const char *extension : s_DeviceExtensions)
+    {
+        bool found = false;
 
-		for (const auto& extensionProperties : availableExtensions)
-		{
-			if (strcmp(extension, extensionProperties.extensionName) == 0)
-			{
-				found = true;
-				break;
-			}
-		}
+        for (const auto &extensionProperties : availableExtensions)
+        {
+            if (strcmp(extension, extensionProperties.extensionName) == 0)
+            {
+                found = true;
+                break;
+            }
+        }
 
-		if (!found)
-		{
-			return false;
-		}
-	}
+        if (!found)
+        {
+            return false;
+        }
+    }
 
-	return true;
+    return true;
 }
 
 int32_t ae::VulkanManager::FindQueueFamilies(VkPhysicalDevice device)
@@ -372,7 +371,7 @@ int32_t ae::VulkanManager::FindQueueFamilies(VkPhysicalDevice device)
         {
             bool supportsAllSurfaces = true;
 
-            for (auto& surface : m_Surfaces)
+            for (auto &surface : m_Surfaces)
             {
                 VkBool32 canPresent = VK_FALSE;
                 vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &canPresent);
@@ -393,7 +392,6 @@ int32_t ae::VulkanManager::FindQueueFamilies(VkPhysicalDevice device)
     return -1; // No suitable queue found
 }
 
-
 double ae::VulkanManager::RateDevice(VkPhysicalDevice device)
 {
     int32_t queueFamilyIndices = FindQueueFamilies(device);
@@ -405,7 +403,7 @@ double ae::VulkanManager::RateDevice(VkPhysicalDevice device)
 
     if (!IsDeviceSuitable(device))
     {
-		return -1.0; // Not suitable if not all surfaces are supported
+        return -1.0; // Not suitable if not all surfaces are supported
     }
 
     VkPhysicalDeviceProperties deviceProperties;
@@ -416,7 +414,7 @@ double ae::VulkanManager::RateDevice(VkPhysicalDevice device)
 
     double score = 0.0;
 
-	if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) // Not integrated
+    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) // Not integrated
     {
         score += 1000;
     }
@@ -443,7 +441,9 @@ void ae::VulkanManager::FindDeviceData()
 
     m_Renderer = props.deviceName;
 
-    std::string apiVersion = std::to_string(VK_VERSION_MAJOR(props.apiVersion)) + "." + std::to_string(VK_VERSION_MINOR(props.apiVersion)) + "." + std::to_string(VK_VERSION_PATCH(props.apiVersion));
+    std::string apiVersion = std::to_string(VK_VERSION_MAJOR(props.apiVersion)) + "." +
+                             std::to_string(VK_VERSION_MINOR(props.apiVersion)) + "." +
+                             std::to_string(VK_VERSION_PATCH(props.apiVersion));
 
     std::string vendorString = "Unknown";
 
@@ -462,20 +462,24 @@ void ae::VulkanManager::FindDeviceData()
         break;
     }
 
-	std::string deviceVersion = std::to_string(VK_VERSION_MAJOR(props.driverVersion)) + "." + std::to_string(VK_VERSION_MINOR(props.driverVersion)) + "." + std::to_string(VK_VERSION_PATCH(props.driverVersion)); 
+    std::string deviceVersion = std::to_string(VK_VERSION_MAJOR(props.driverVersion)) + "." +
+                                std::to_string(VK_VERSION_MINOR(props.driverVersion)) + "." +
+                                std::to_string(VK_VERSION_PATCH(props.driverVersion));
 
-	m_Version = apiVersion + " " + vendorString + " " + deviceVersion;
+    m_Version = apiVersion + " " + vendorString + " " + deviceVersion;
 
-	m_Vendor = vendorString;
+    m_Vendor = vendorString;
 
-    AE_LOG_CONSOLE(AE_INFO, "Vulkan Version: " << m_Version);
-    AE_LOG_CONSOLE(AE_INFO, "Vulkan Renderer: " << m_Renderer);
-    AE_LOG_CONSOLE(AE_INFO, "Vulkan Vendor: " << m_Vendor);
+    AE_LOG_TRACE("Vulkan Version: {}", m_Version);
+    AE_LOG_TRACE("Vulkan Renderer: {}", m_Renderer);
+    AE_LOG_TRACE("Vulkan Vendor: {}", m_Vendor);
 }
 
 void ae::VulkanManager::ResetDeviceData()
 {
-	m_Version = "None";
-	m_Renderer = "None";
-	m_Vendor = "None";
+    m_Version = "None";
+    m_Renderer = "None";
+    m_Vendor = "None";
 }
+
+#endif // AE_VULKAN

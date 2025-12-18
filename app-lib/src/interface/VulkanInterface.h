@@ -1,7 +1,9 @@
 #pragma once
 
+#ifdef AE_VULKAN
+
 #include "Vulkan.h"
-#include "ImGui.h"
+#include "DearImGui.h"
 
 #include "Interface.h"
 
@@ -30,3 +32,5 @@ namespace ae
 		VkDescriptorPool m_DescriptorPool;
 	};
 }
+
+#endif // AE_VULKAN

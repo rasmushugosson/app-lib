@@ -1,50 +1,41 @@
-#include "general/pch.h"
-
 #include "OpenGLContext.h"
-
 #include "OpenGLManager.h"
+#include "general/pch.h"
 #include "window/WindowManager.h"
 
-ae::OpenGLContext::OpenGLContext(Window& window)
-	: Context(window)
-{
-}
+ae::OpenGLContext::OpenGLContext(Window &window) : Context(window) {}
 
-ae::OpenGLContext::~OpenGLContext()
-{
-}
+ae::OpenGLContext::~OpenGLContext() = default;
 
 bool ae::OpenGLContext::CreateImpl()
 {
-	glfwMakeContextCurrent(m_Window.GetWindow());
+    glfwMakeContextCurrent(m_Window.GetWindow());
 
-	OpenGLManager::Get().AddContext();
+    OpenGLManager::Get().AddContext();
 
-	m_GraphicsAPI = "OpenGL";
-	m_GraphicsVersion = OpenGLManager::Get().GetVersion();
-	m_GraphicsCard = OpenGLManager::Get().GetRenderer();
-	m_GraphicsVendor = OpenGLManager::Get().GetVendor();
+    m_GraphicsAPI = "OpenGL";
+    m_GraphicsVersion = OpenGLManager::Get().GetVersion();
+    m_GraphicsCard = OpenGLManager::Get().GetRenderer();
+    m_GraphicsVendor = OpenGLManager::Get().GetVendor();
 
-	return true;
+    return true;
 }
 
 void ae::OpenGLContext::ActivateImpl()
 {
-	WindowManager::Get().DeactivateAllWindows();
+    WindowManager::Get().DeactivateAllWindows();
 
-	glfwMakeContextCurrent(m_Window.GetWindow());
+    glfwMakeContextCurrent(m_Window.GetWindow());
 }
 
-void ae::OpenGLContext::DeactivateImpl()
-{
-}
+void ae::OpenGLContext::DeactivateImpl() {}
 
 void ae::OpenGLContext::DestroyImpl()
 {
-	OpenGLManager::Get().RemoveContext();
+    OpenGLManager::Get().RemoveContext();
 
-	m_GraphicsAPI = "Undefined";
-	m_GraphicsVersion = "Undefined";
-	m_GraphicsCard = "Undefined";
-	m_GraphicsVendor = "Undefined";
+    m_GraphicsAPI = "Undefined";
+    m_GraphicsVersion = "Undefined";
+    m_GraphicsCard = "Undefined";
+    m_GraphicsVendor = "Undefined";
 }

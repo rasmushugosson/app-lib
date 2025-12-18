@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef AE_VULKAN
+
 #include <vector>
 
 #include "Vulkan.h"
@@ -110,3 +112,5 @@ namespace ae
 		uint32_t m_CurrentImageIndex;
 	};
 }
+
+#endif // AE_VULKAN

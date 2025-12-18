@@ -1,33 +1,25 @@
 #pragma once
 
-#ifdef AE_VULKAN
+#define AE_VULKAN_NOT_FOUND_MESSAGE                                                                                    \
+    "Vulkan is not linked and therefore cannot be used. Make sure it is installed and set as a PATH variable. Check "  \
+    "premake5.lua file for further info"
 
-#include <vulkan/vulkan.h>
+#ifdef AE_VULKAN
 
 #include "Log.h"
 
-namespace ae
-{
-	class VulkanError : public std::runtime_error
-	{
-	public:
-		explicit VulkanError(const std::string& file, uint32_t line, const std::ostringstream& message)
-			: std::runtime_error(FormatError("Vulkan error", file, line, message))
-		{
-		}
-	};
-}
-
-#define AE_THROW_VULKAN_ERROR(m) throw ae::VulkanError(__FILE__, __LINE__, std::ostringstream() << m)
+#include <vulkan/vulkan.h>
 
 #ifndef AE_DIST
 
 namespace ae
 {
-	void VulkanCheckResult(VkResult result, const char* function, const char* file, uint32_t line);
+void VulkanCheckResult(VkResult result, const std::string &call, const std::string &file, uint32_t line);
 
-	#define VK_CHECK(x) VkResult err = x; ae::VulkanCheckResult(err, #x, __FILE__, __LINE__)
-}
+#define VK_CHECK(x)                                                                                                    \
+    VkResult err = x;                                                                                                  \
+    ae::VulkanCheckResult(err, #x, __FILE__, __LINE__)
+} // namespace ae
 
 #else
 
@@ -39,7 +31,6 @@ namespace ae
 
 #ifndef AE_DIST
 
-#define AE_VULKAN_NOT_FOUND_MESSAGE "Vulkan is not linked and therefore cannot be used. Make sure it is installed and set as a PATH variable. Check premake5.lua file for further info"
 #define VK_CHECK(x) throw ae::VulkanError(__FILE__, __LINE__, std::ostringstream() << AE_VULKAN_NOT_FOUND_MESSAGE)
 
 #else

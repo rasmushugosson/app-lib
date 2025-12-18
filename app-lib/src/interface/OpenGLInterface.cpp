@@ -1,40 +1,33 @@
-#include "general/pch.h"
-
 #include "OpenGLInterface.h"
-
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
+#include "general/pch.h"
 
-ae::OpenGLInterface::OpenGLInterface(Window& window)
-	: Interface(window)
-{
-}
+ae::OpenGLInterface::OpenGLInterface(Window &window) : Interface(window) {}
 
-ae::OpenGLInterface::~OpenGLInterface()
-{
-}
+ae::OpenGLInterface::~OpenGLInterface() = default;
 
 bool ae::OpenGLInterface::CreateImpl()
 {
-	ImGui_ImplGlfw_InitForOpenGL(m_Window.GetWindow(), true);
-	ImGui_ImplOpenGL3_Init("#version 460 core");	
+    ImGui_ImplGlfw_InitForOpenGL(m_Window.GetWindow(), true);
+    ImGui_ImplOpenGL3_Init("#version 460 core");
 
-	return true;
+    return true;
 }
 
 void ae::OpenGLInterface::DestroyImpl()
 {
-	ImGui_ImplOpenGL3_Shutdown();	
-	ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
 }
 
 void ae::OpenGLInterface::PrepareImpl()
 {
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
 }
 
 void ae::OpenGLInterface::FinishImpl()
 {
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

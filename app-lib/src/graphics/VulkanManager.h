@@ -1,5 +1,7 @@
 #pragma once
 
+#ifdef AE_VULKAN
+
 #include "Vulkan.h"
 
 namespace ae
@@ -85,3 +87,5 @@ namespace ae
 		static VulkanManager m_Instance;
 	};
 }
+
+#endif // AE_VULKAN
