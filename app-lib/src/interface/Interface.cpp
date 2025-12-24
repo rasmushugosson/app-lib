@@ -3,6 +3,8 @@
 #include "backends/imgui_impl_glfw.h"
 #include "general/pch.h"
 
+#include <print>
+
 ae::Interface::Interface(Window &window)
     : m_Window(window), m_pContext(nullptr), m_OnInterfaceUpdate(nullptr), m_Created(false)
 {
@@ -13,7 +15,7 @@ ae::Interface::~Interface()
 #ifdef AE_DEBUG
     if (m_Created)
     {
-        AE_LOG_WARNING("Interface was not destroyed before being deleted");
+        std::fputs("Warning: Interface was not destroyed before being deleted\n", stderr);
     }
 #endif // AE_DEBUG
 }
@@ -23,7 +25,7 @@ void ae::Interface::Create()
 #ifdef AE_DEBUG
     if (m_Created)
     {
-        AE_LOG_WARNING("Tried to create Interface but it was already created");
+        AE_LOG(AE_WARNING,"Tried to create Interface but it was already created");
         return;
     }
 #endif // AE_DEBUG
@@ -57,7 +59,7 @@ void ae::Interface::Prepare()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to prepare Interface but it was not created");
+        AE_LOG(AE_WARNING,"Tried to prepare Interface but it was not created");
         return;
     }
 #endif // AE_DEBUG
@@ -70,7 +72,7 @@ void ae::Interface::Update()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to update Interface but it was not created");
+        AE_LOG(AE_WARNING,"Tried to update Interface but it was not created");
         return;
     }
 #endif // AE_DEBUG
@@ -93,7 +95,7 @@ void ae::Interface::Finish()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to finish Interface but it was not created");
+        AE_LOG(AE_WARNING,"Tried to finish Interface but it was not created");
         return;
     }
 #endif // AE_DEBUG
@@ -107,7 +109,7 @@ void ae::Interface::Destroy()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to destroy Interface but it was not created");
+        AE_LOG(AE_WARNING,"Tried to destroy Interface but it was not created");
         return;
     }
 #endif // AE_DEBUG

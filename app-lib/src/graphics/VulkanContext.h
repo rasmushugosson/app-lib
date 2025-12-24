@@ -28,7 +28,7 @@ namespace ae
 		void PresentImage();
 
 		inline VkInstance GetInstance() const { return ae::VulkanManager::Get().GetInstance(); }
-		inline VkPhysicalDevice GetPhysicalDevice() const { ae::VulkanManager::Get().GetPhysicalDevice(); }
+		inline VkPhysicalDevice GetPhysicalDevice() const { return ae::VulkanManager::Get().GetPhysicalDevice(); }
 		inline VkDevice GetDevice() const { return ae::VulkanManager::Get().GetDevice(); }
 		inline VkQueue GetGraphicsQueue() const { return ae::VulkanManager::Get().GetGraphicsQueue(); }
 		inline uint32_t GetGraphicsQueueFamilyIndex() const { return ae::VulkanManager::Get().GetGraphicsQueueFamilyIndex(); }

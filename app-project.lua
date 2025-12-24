@@ -10,6 +10,33 @@ local dep_dir = app_lib_dir .. "/dep"
 
 local vulkanSDK = os.getenv("VULKAN_SDK") or os.getenv("VK_SDK_PATH")
 
+-- Detect Vulkan availability
+-- On Windows: requires VULKAN_SDK or VK_SDK_PATH environment variable
+-- On Linux/macOS: can also use system-installed Vulkan
+local function detect_vulkan()
+	if vulkanSDK then
+		return true, vulkanSDK
+	end
+	-- Check for system Vulkan on Linux/macOS
+	if os.target() == "linux" or os.target() == "macosx" then
+		if os.isfile("/usr/include/vulkan/vulkan.h") then
+			return true, nil -- Available but no SDK path
+		end
+	end
+	return false, nil
+end
+
+local vulkanAvailable, vulkanSDKPath = detect_vulkan()
+AE_VULKAN_AVAILABLE = vulkanAvailable -- Export as global for parent projects
+
+if vulkanAvailable then
+	if vulkanSDKPath then
+		print(">> Vulkan SDK detected: " .. vulkanSDKPath)
+	else
+		print(">> System Vulkan detected")
+	end
+end
+
 include(log_lib_dir .. "/log-project.lua")
 
 project("STB")
@@ -66,12 +93,14 @@ filter("system:windows")
 includedirs({ dep_dir .. "/GLFW/include" })
 filter({})
 
-if vulkanSDK then
+if vulkanAvailable then
 	files({
 		vendor_dir .. "/imgui/backends/imgui_impl_vulkan.cpp",
 		vendor_dir .. "/imgui/backends/imgui_impl_vulkan.h",
 	})
-	includedirs({ vulkanSDK .. "/Include" })
+	if vulkanSDKPath then
+		includedirs({ vulkanSDKPath .. "/Include" })
+	end
 end
 
 project("App")
@@ -146,12 +175,14 @@ links({
 
 filter({})
 
-if vulkanSDK then
+if vulkanAvailable then
 	defines({ "AE_VULKAN" })
-	includedirs({ vulkanSDK .. "/Include" })
-
-	filter("system:windows")
-	links({ vulkanSDK .. "/Lib/vulkan-1.lib" })
+	if vulkanSDKPath then
+		includedirs({ vulkanSDKPath .. "/Include" })
+		filter("system:windows")
+		links({ vulkanSDKPath .. "/Lib/vulkan-1.lib" })
+		filter({})
+	end
 
 	filter("system:linux or system:macosx")
 	links({ "vulkan" })

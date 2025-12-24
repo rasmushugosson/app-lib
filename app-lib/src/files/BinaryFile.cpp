@@ -5,7 +5,7 @@
 
 ae::BinaryFile::BinaryFile(const std::string &path) : File(path) {}
 
-void ae::BinaryFile::OnLoad()
+void ae::BinaryFile::ReadImpl()
 {
     FILE *file = fopen(m_Path.c_str(), "rb");
     if (!file)

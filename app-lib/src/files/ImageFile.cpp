@@ -6,7 +6,7 @@
 template <typename T>
 ae::ImageFile<T>::ImageFile(const std::string &path) : File(path), m_Data(), m_Width(0), m_Height(0), m_Channels(0)
 {
-    Load();
+    Read();
 }
 
 template <typename T>
@@ -34,7 +34,8 @@ template <typename T> void ae::ImageFile<T>::Export(const std::string &path) con
 
     if (extension == "png")
     {
-        stbi_write_png(path.c_str(), m_Width, m_Height, m_Channels, m_Data.data(), m_Width * m_Channels * sizeof(T));
+        stbi_write_png(path.c_str(), m_Width, m_Height, m_Channels, m_Data.data(),
+                       static_cast<int>(sizeof(T) * m_Width * m_Channels));
     }
 
     else if (extension == "jpg" || extension == "jpeg")
@@ -72,7 +73,7 @@ template <typename T> void ae::ImageFile<T>::Export(const std::string &path) con
     }
 }
 
-template <typename T> void ae::ImageFile<T>::OnLoad()
+template <typename T> void ae::ImageFile<T>::ReadImpl()
 {
     if constexpr (std::is_same_v<T, uint8_t>)
     {

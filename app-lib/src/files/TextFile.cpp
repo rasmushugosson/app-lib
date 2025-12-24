@@ -5,7 +5,7 @@
 
 ae::TextFile::TextFile(const std::string &path) : File(path) {}
 
-void ae::TextFile::OnLoad()
+void ae::TextFile::ReadImpl()
 {
     FILE *file = fopen(m_Path.c_str(), "rb");
 

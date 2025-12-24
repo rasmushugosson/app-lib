@@ -21,9 +21,9 @@ void ae::OpenGLManager::AddContext()
         m_Renderer = reinterpret_cast<const char *>(glGetString(GL_RENDERER));
         m_Vendor = reinterpret_cast<const char *>(glGetString(GL_VENDOR));
 
-        AE_LOG_TRACE("OpenGL Version: {}", m_Version);
-        AE_LOG_TRACE("OpenGL Renderer: {}", m_Renderer);
-        AE_LOG_TRACE("OpenGL Vendor: {}", m_Vendor);
+        AE_LOG(AE_TRACE,"OpenGL Version: {}", m_Version);
+        AE_LOG(AE_TRACE,"OpenGL Renderer: {}", m_Renderer);
+        AE_LOG(AE_TRACE,"OpenGL Vendor: {}", m_Vendor);
 
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);

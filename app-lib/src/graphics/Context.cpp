@@ -1,6 +1,8 @@
 #include "Window.h"
 #include "general/pch.h"
 
+#include <print>
+
 ae::Context::Context(Window &window)
     : m_Window(window), m_GraphicsAPI("Undefined"), m_GraphicsVersion("Undefined"), m_GraphicsCard("Undefined"),
       m_GraphicsVendor("Undefined"), m_Created(false)
@@ -12,7 +14,7 @@ ae::Context::~Context()
 #ifdef AE_DEBUG
     if (m_Created)
     {
-        AE_LOG_WARNING("Context not destroyed before decontruction");
+        std::fputs("Warning: Context not destroyed before destruction\n", stderr);
     }
 #endif // AE_DEBUG
 }
@@ -22,7 +24,7 @@ void ae::Context::Create()
 #ifdef AE_DEBUG
     if (m_Created)
     {
-        AE_LOG_WARNING("Tried to create graphics Context for Window but it has already been created");
+        AE_LOG(AE_WARNING,"Tried to create graphics Context for Window but it has already been created");
         return;
     }
 #endif // AE_DEBUG
@@ -40,7 +42,7 @@ void ae::Context::Activate()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to activate graphics Context but it is not created");
+        AE_LOG(AE_WARNING,"Tried to activate graphics Context but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -52,7 +54,7 @@ void ae::Context::Deactivate()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to deactivate graphics Context but it is not created");
+        AE_LOG(AE_WARNING,"Tried to deactivate graphics Context but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -64,7 +66,7 @@ void ae::Context::Destroy()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to destroy graphics Context but it is already not created");
+        AE_LOG(AE_WARNING,"Tried to destroy graphics Context but it is already not created");
         return;
     }
 #endif // AE_DEBUG

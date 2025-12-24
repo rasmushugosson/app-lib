@@ -65,6 +65,10 @@ static void OnInterfaceUpdate()
 
 static void Demo()
 {
+    // Configure log sinks so we can see output
+    ae::Logger::Get().AddConsoleSink("Console", ae::LogSinkConsoleKind::STDOUT, AE_TRACE, AE_WARNING);
+    ae::Logger::Get().AddConsoleSink("Errors", ae::LogSinkConsoleKind::STDERR, AE_ERROR);
+
     // We wrap the code in a try-catch block to catch any exceptions that might be thrown
     try
     {
@@ -82,7 +86,7 @@ static void Demo()
         windowDesc.fullscreen = false;
         windowDesc.vsync = true;
         windowDesc.fps = 165; // Not actually used since vsync is enabled
-        windowDesc.graphicsAPI = ae::GraphicsAPI::OPENGL;
+        windowDesc.graphicsAPI = ae::GraphicsAPI::VULKAN;
 
         // We can now create a window with the descriptor
         ae::Window window(windowDesc);

@@ -6,7 +6,7 @@
 
 ae::AudioFile::AudioFile(const std::string &path) : File(path), m_SampleRate(0), m_Channels(0), m_Samples(0) {}
 
-void ae::AudioFile::OnLoad()
+void ae::AudioFile::ReadImpl()
 {
     int32_t error = 0;
 
@@ -23,10 +23,11 @@ void ae::AudioFile::OnLoad()
     m_Channels = info.channels;
     m_Samples = stb_vorbis_stream_length_in_samples(pVorbis);
 
-    int32_t samples = m_Samples * m_Channels;
+    int samples = static_cast<int>(m_Samples * m_Channels);
     m_Data.resize(samples);
 
-    int32_t read = stb_vorbis_get_samples_short_interleaved(pVorbis, m_Channels, m_Data.data(), samples);
+    int32_t read =
+        stb_vorbis_get_samples_short_interleaved(pVorbis, static_cast<int>(m_Channels), m_Data.data(), samples);
 
     if (read != samples)
     {
@@ -44,7 +45,7 @@ ae::AudioFileStream::AudioFileStream(const std::string &path, uint32_t chunkSamp
 
 ae::AudioFileStream::~AudioFileStream()
 {
-    Unload();
+    Close();
 }
 
 std::vector<short> ae::AudioFileStream::GetNextChunkData()
@@ -54,10 +55,11 @@ std::vector<short> ae::AudioFileStream::GetNextChunkData()
         return {};
     }
 
-    int32_t samples = m_ChunkSamples * m_Channels;
+    int samples = static_cast<int>(m_ChunkSamples * m_Channels);
     std::vector<short> data(samples);
 
-    int32_t read = stb_vorbis_get_samples_short_interleaved(m_pVorbis, m_Channels, data.data(), samples);
+    int32_t read =
+        stb_vorbis_get_samples_short_interleaved(m_pVorbis, static_cast<int>(m_Channels), data.data(), samples);
 
     if (read < samples)
     {
@@ -74,7 +76,7 @@ void ae::AudioFileStream::Restart()
     stb_vorbis_seek_start(m_pVorbis);
 }
 
-void ae::AudioFileStream::OnLoad()
+void ae::AudioFileStream::ReadImpl()
 {
     int32_t error = 0;
     m_pVorbis = stb_vorbis_open_filename(m_Path.c_str(), &error, nullptr);
@@ -91,7 +93,7 @@ void ae::AudioFileStream::OnLoad()
     m_Samples = stb_vorbis_stream_length_in_samples(m_pVorbis);
 }
 
-void ae::AudioFileStream::Unload()
+void ae::AudioFileStream::Close()
 {
     if (m_pVorbis)
     {

@@ -21,7 +21,7 @@ enum class GraphicsAPI : uint8_t
 
 struct WindowDesc
 {
-    std::string_view title;
+    std::string title;
     uint32_t width;
     uint32_t height;
     bool resizable;
@@ -42,9 +42,18 @@ struct WindowDesc
     {
     }
 
-    constexpr WindowDesc(const std::string_view &title, uint32_t width, uint32_t height, bool resizable,
-                         bool minimizable, bool minimized, bool maximizable, bool maximized, bool fullscreen,
-                         uint8_t monitor, bool vsync, uint32_t fps, GraphicsAPI graphicsAPI)
+    constexpr WindowDesc(std::string_view title, uint32_t width, uint32_t height, bool resizable, bool minimizable,
+                         bool minimized, bool maximizable, bool maximized, bool fullscreen, uint8_t monitor, bool vsync,
+                         uint32_t fps, GraphicsAPI graphicsAPI)
+        : title(title), width(width), height(height), resizable(resizable), minimizable(minimizable),
+          minimized(minimized), maximizable(maximizable), maximized(maximized), fullscreen(fullscreen),
+          monitor(monitor), vsync(vsync), fps(fps), graphicsAPI(graphicsAPI)
+    {
+    }
+
+    constexpr WindowDesc(const std::string &title, uint32_t width, uint32_t height, bool resizable, bool minimizable,
+                         bool minimized, bool maximizable, bool maximized, bool fullscreen, uint8_t monitor, bool vsync,
+                         uint32_t fps, GraphicsAPI graphicsAPI)
         : title(title), width(width), height(height), resizable(resizable), minimizable(minimizable),
           minimized(minimized), maximizable(maximizable), maximized(maximized), fullscreen(fullscreen),
           monitor(monitor), vsync(vsync), fps(fps), graphicsAPI(graphicsAPI)
@@ -576,7 +585,7 @@ class Cursor
     Cursor(const Cursor &cursor);
     ~Cursor();
 
-    Cursor &operator=(const Cursor &cursor);
+    Cursor &operator=(const Cursor &other);
 
     [[nodiscard]] inline GLFWcursor *GetCursor() const
     {
@@ -819,13 +828,13 @@ class Window
     {
         m_OnWindowResize = cb;
     }
-    inline void SetOnWindowMinimalizedCB(const std::function<void()> &cb)
+    inline void SetOnWindowMinimizedCB(const std::function<void()> &cb)
     {
-        m_OnWindowMinimalized = cb;
+        m_OnWindowMinimized = cb;
     }
-    inline void SetOnWindowMaximalizedCB(const std::function<void()> &cb)
+    inline void SetOnWindowMaximizedCB(const std::function<void()> &cb)
     {
-        m_OnWindowMaximalized = cb;
+        m_OnWindowMaximized = cb;
     }
     inline void SetOnWindowRestoredCB(const std::function<void()> &cb)
     {
@@ -917,9 +926,9 @@ class Window
     std::array<float, 4> m_ClearColor;
     std::unique_ptr<Interface> m_pInterface;
 
-    std::function<void(char)> m_OnKeyPressed = nullptr;
-    std::function<void(char)> m_OnKeyReleased = nullptr;
-    std::function<void(char)> m_OnKeyTyped = nullptr;
+    std::function<void(int32_t)> m_OnKeyPressed = nullptr;
+    std::function<void(int32_t)> m_OnKeyReleased = nullptr;
+    std::function<void(int32_t)> m_OnKeyTyped = nullptr;
 
     std::function<void(int32_t)> m_OnMouseButtonPressed = nullptr;
     std::function<void(int32_t)> m_OnMouseButtonReleased = nullptr;
@@ -929,8 +938,8 @@ class Window
     std::function<void()> m_OnMouseExited = nullptr;
 
     std::function<void(uint32_t, uint32_t)> m_OnWindowResize = nullptr;
-    std::function<void()> m_OnWindowMinimalized = nullptr;
-    std::function<void()> m_OnWindowMaximalized = nullptr;
+    std::function<void()> m_OnWindowMinimized = nullptr;
+    std::function<void()> m_OnWindowMaximized = nullptr;
     std::function<void()> m_OnWindowRestored = nullptr;
     std::function<void(uint32_t, uint32_t)> m_OnWindowMoved = nullptr;
     std::function<void(bool)> m_OnWindowFocused = nullptr;

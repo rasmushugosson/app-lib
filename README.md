@@ -66,7 +66,7 @@ These commands assume `clang-format` and `clang-tidy` are installed on your syst
 
 - **Graphics Drivers / SDKs:**
   - **OpenGL:** The library assumes OpenGL drivers are installed and available by default.
-  - **Vulkan:** If you want to enable Vulkan support, install the [Vulkan SDK](https://www.vulkan.org/tools#download-these-essential-development-tools) and add it to your system `PATH`. If the Vulkan SDK is not found, only the OpenGL portion will be usable.
+  - **Vulkan:** Optional. If Vulkan is not available, only the OpenGL graphics API will be usable.
 
 - **Linux Dependencies:** On Linux, install the required system packages:
   ```bash
@@ -76,6 +76,18 @@ These commands assume `clang-format` and `clang-tidy` are installed on your syst
   # Arch Linux
   sudo pacman -S glfw glew openal
   ```
+
+  For Vulkan support on Linux, install the Vulkan headers and validation layers:
+  ```bash
+  # Debian/Ubuntu
+  sudo apt install vulkan-headers vulkan-validationlayers
+
+  # Arch Linux
+  sudo pacman -S vulkan-headers vulkan-validation-layers
+  ```
+  Note: Validation layers are only required for debug builds.
+
+- **Windows Vulkan:** For Vulkan support on Windows, install the [Vulkan SDK](https://www.vulkan.org/tools#download-these-essential-development-tools). The SDK installer sets the `VULKAN_SDK` environment variable automatically, which the build system uses to locate Vulkan headers and libraries.
 
 ## Using as a Submodule
 

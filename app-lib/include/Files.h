@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Log.h"
+
 #include <stdint.h>
 #include <string>
 #include <string_view>
@@ -23,8 +25,16 @@ class File
 {
   public:
     File();
+    File(std::string_view path);
     File(const std::string &path);
     virtual ~File() = default;
+
+    File &Read();
+
+    [[nodiscard]] inline bool IsRead() const
+    {
+        return m_Read;
+    }
 
     [[nodiscard]] inline const std::string &GetPath() const
     {
@@ -35,12 +45,13 @@ class File
     static bool Exists(const std::string &path);
 
   protected:
-    void Load();
-
-    virtual void OnLoad() = 0;
+    virtual void ReadImpl() = 0;
 
   protected:
     std::string m_Path;
+
+  private:
+    bool m_Read;
 };
 
 class TextFile : public File
@@ -51,11 +62,19 @@ class TextFile : public File
 
     [[nodiscard]] inline const std::string &GetData() const
     {
+#ifdef AE_DEBUG
+        if (!IsRead())
+        {
+            AE_LOG(AE_WARNING, "Tried to get data from TextFile but the content has not been read yet. Call Read() "
+                               "before attempting to retrieve data");
+        }
+#endif // AE_DEBUG
+
         return m_Data;
     }
 
   protected:
-    void OnLoad() override;
+    void ReadImpl() override;
 
   private:
     std::string m_Data;
@@ -69,11 +88,19 @@ class BinaryFile : public File
 
     [[nodiscard]] inline const std::vector<uint8_t> &GetData() const
     {
+#ifdef AE_DEBUG
+        if (!IsRead())
+        {
+            AE_LOG(AE_WARNING, "Tried to get data from BinaryFile but the content has not been read yet. Call Read() "
+                               "before attempting to retrieve data");
+        }
+#endif // AE_DEBUG
+
         return m_Data;
     }
 
   protected:
-    void OnLoad() override;
+    void ReadImpl() override;
 
   private:
     std::vector<uint8_t> m_Data;
@@ -106,11 +133,19 @@ template <typename T> class ImageFile : public File
     }
     const std::vector<T> &GetData() const
     {
+#ifdef AE_DEBUG
+        if (!IsRead())
+        {
+            AE_LOG(AE_WARNING, "Tried to get data from ImageFile but the content has not been read yet. Call Read() "
+                               "before attempting to retrieve data");
+        }
+#endif // AE_DEBUG
+
         return m_Data;
     }
 
   private:
-    void OnLoad() override;
+    void ReadImpl() override;
 
   private:
     std::string m_Path;
@@ -128,28 +163,72 @@ class AudioFile : public File
 
     [[nodiscard]] inline uint32_t GetSampleRate() const
     {
+#ifdef AE_DEBUG
+        if (!IsRead())
+        {
+            AE_LOG(AE_WARNING,
+                   "Tried to get sample rate from AudioFile but the content has not been read yet. Call Read() "
+                   "before attempting to retrieve data");
+        }
+#endif // AE_DEBUG
+
         return m_SampleRate;
     }
     [[nodiscard]] inline uint32_t GetChannels() const
     {
+#ifdef AE_DEBUG
+        if (!IsRead())
+        {
+            AE_LOG(AE_WARNING,
+                   "Tried to get number of channels from AudioFile but the content has not been read yet. Call Read() "
+                   "before attempting to retrieve data");
+        }
+#endif // AE_DEBUG
+
         return m_Channels;
     }
     [[nodiscard]] inline uint32_t GetSamples() const
     {
+#ifdef AE_DEBUG
+        if (!IsRead())
+        {
+            AE_LOG(AE_WARNING,
+                   "Tried to get sample count from AudioFile but the content has not been read yet. Call Read() "
+                   "before attempting to retrieve data");
+        }
+#endif // AE_DEBUG
+
         return m_Samples;
     }
     [[nodiscard]] inline double GetDuration() const
     {
+#ifdef AE_DEBUG
+        if (!IsRead())
+        {
+            AE_LOG(AE_WARNING,
+                   "Tried to get duration from AudioFile but the content has not been read yet. Call Read() "
+                   "before attempting to retrieve data");
+        }
+#endif // AE_DEBUG
+
         return static_cast<double>(m_Samples) / static_cast<double>(m_SampleRate);
     }
 
     [[nodiscard]] const std::vector<short> &GetData() const
     {
+#ifdef AE_DEBUG
+        if (!IsRead())
+        {
+            AE_LOG(AE_WARNING, "Tried to get data from BinaryFile but the content has not been read yet. Call Read() "
+                               "before attempting to retrieve data");
+        }
+#endif // AE_DEBUG
+
         return m_Data;
     }
 
   private:
-    void OnLoad() override;
+    void ReadImpl() override;
 
   private:
     std::vector<short> m_Data;
@@ -198,8 +277,8 @@ class AudioFileStream : public File
     }
 
   private:
-    void OnLoad() override;
-    void Unload();
+    void ReadImpl() override;
+    void Close();
 
   private:
     stb_vorbis *m_pVorbis;

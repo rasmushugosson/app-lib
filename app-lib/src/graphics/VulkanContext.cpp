@@ -19,14 +19,20 @@ ae::VulkanContext::~VulkanContext() {}
 
 void ae::VulkanContext::WaitForPreviousFrame()
 {
+    // Wait for the fence associated with this frame index before using its acquire semaphore
+    // This ensures the previous frame that used this semaphore has completed its submit
     vkWaitForFences(VulkanManager::Get().GetDevice(), 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences(VulkanManager::Get().GetDevice(), 1, &m_InFlightFences[m_CurrentFrame]);
 }
 
 void ae::VulkanContext::AquireNextImage()
 {
+    // Acquire the next available image - use frame counter for the acquire semaphore
+    // The semaphore is safe to use because we waited for the fence in WaitForPreviousFrame
     vkAcquireNextImageKHR(VulkanManager::Get().GetDevice(), m_SwapChain, UINT64_MAX,
                           m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &m_CurrentImageIndex);
+
+    // Reset the fence for this frame - we'll signal it when we submit
+    vkResetFences(VulkanManager::Get().GetDevice(), 1, &m_InFlightFences[m_CurrentFrame]);
 }
 
 void ae::VulkanContext::ResetCommandBuffer()
@@ -46,8 +52,8 @@ void ae::VulkanContext::ResetCommandBuffer()
 
 void ae::VulkanContext::BeginRenderPass()
 {
-    const float *clearColorData = m_Window.GetClearColor();
-    VkClearValue clearColor = { clearColorData[0], clearColorData[1], clearColorData[2], clearColorData[3] };
+    const auto &clearColorData = m_Window.GetClearColor();
+    VkClearValue clearColor = { { { clearColorData[0], clearColorData[1], clearColorData[2], clearColorData[3] } } };
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -70,10 +76,12 @@ void ae::VulkanContext::SubmitCommandBuffer()
 {
     vkEndCommandBuffer(m_CommandBuffers[m_CurrentImageIndex]);
 
+    // Wait on the acquire semaphore (indexed by frame counter, as used in AcquireNextImage)
     VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[m_CurrentFrame] };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
-    VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_CurrentFrame] };
+    // Signal the render-finished semaphore indexed by acquired image to avoid reuse issues
+    VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_CurrentImageIndex] };
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -85,6 +93,7 @@ void ae::VulkanContext::SubmitCommandBuffer()
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
+    // Signal the fence for this frame so we know when we can reuse its acquire semaphore
     if (vkQueueSubmit(VulkanManager::Get().GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame]) !=
         VK_SUCCESS)
     {
@@ -97,7 +106,8 @@ void ae::VulkanContext::PresentImage()
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &m_RenderFinishedSemaphores[m_CurrentFrame];
+    // Wait on the render-finished semaphore for this specific image
+    presentInfo.pWaitSemaphores = &m_RenderFinishedSemaphores[m_CurrentImageIndex];
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &m_SwapChain;
     presentInfo.pImageIndices = &m_CurrentImageIndex;
@@ -115,6 +125,7 @@ void ae::VulkanContext::PresentImage()
         AE_THROW_RUNTIME_ERROR("Failed to present Vulkan image");
     }
 
+    // Advance frame counter for acquire semaphore selection
     m_CurrentFrame =
         static_cast<uint32_t>((static_cast<size_t>(m_CurrentFrame) + 1) % m_ImageAvailableSemaphores.size());
 }
@@ -153,7 +164,15 @@ void ae::VulkanContext::DeactivateImpl()
 
 void ae::VulkanContext::DestroyImpl()
 {
+    // Wait for all GPU work to complete
     vkDeviceWaitIdle(VulkanManager::Get().GetDevice());
+
+    // Wait for all in-flight fences to ensure no pending operations
+    if (!m_InFlightFences.empty())
+    {
+        vkWaitForFences(VulkanManager::Get().GetDevice(), static_cast<uint32_t>(m_InFlightFences.size()),
+                        m_InFlightFences.data(), VK_TRUE, UINT64_MAX);
+    }
 
     DestroySyncObjects();
     DestroyCommandBuffers();
@@ -464,10 +483,12 @@ void ae::VulkanContext::DestroyCommandBuffers()
 
 void ae::VulkanContext::CreateSyncObjects()
 {
-    size_t maxFramesInFlight = 2;
-    m_ImageAvailableSemaphores.resize(maxFramesInFlight);
-    m_RenderFinishedSemaphores.resize(maxFramesInFlight);
-    m_InFlightFences.resize(maxFramesInFlight);
+    // Create one set of sync objects per swapchain image to avoid semaphore reuse issues
+    // See: https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html
+    size_t imageCount = m_SwapChainImages.size();
+    m_ImageAvailableSemaphores.resize(imageCount);
+    m_RenderFinishedSemaphores.resize(imageCount);
+    m_InFlightFences.resize(imageCount);
 
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -476,7 +497,7 @@ void ae::VulkanContext::CreateSyncObjects()
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    for (size_t i = 0; i < maxFramesInFlight; i++)
+    for (size_t i = 0; i < imageCount; i++)
     {
         if (vkCreateSemaphore(VulkanManager::Get().GetDevice(), &semaphoreInfo, nullptr,
                               &m_ImageAvailableSemaphores[i]) != VK_SUCCESS ||
@@ -507,6 +528,8 @@ void ae::VulkanContext::RecreateSwapChain()
 {
     vkDeviceWaitIdle(VulkanManager::Get().GetDevice());
 
+    DestroySyncObjects();
+    DestroyCommandBuffers();
     DestroyFramebuffers();
     DestroyRenderPass();
     DestroySwapChainImageViews();
@@ -516,9 +539,11 @@ void ae::VulkanContext::RecreateSwapChain()
     CreateSwapChainImageViews();
     CreateRenderPass();
     CreateFramebuffers();
-
-    DestroyCommandBuffers();
     CreateCommandBuffers();
+    CreateSyncObjects();
+
+    // Reset frame counter since sync object count may have changed
+    m_CurrentFrame = 0;
 }
 
 #endif // AE_VULKAN

@@ -177,12 +177,15 @@ links({
 
 filter({})
 
-if vulkanSDK then
+-- Use the global AE_VULKAN_AVAILABLE set by app-project.lua
+if AE_VULKAN_AVAILABLE then
 	defines({ "AE_VULKAN" })
-	includedirs({ vulkanSDK .. "/Include" })
-
-	filter("system:windows")
-	links({ vulkanSDK .. "/Lib/vulkan-1.lib" })
+	if vulkanSDK then
+		includedirs({ vulkanSDK .. "/Include" })
+		filter("system:windows")
+		links({ vulkanSDK .. "/Lib/vulkan-1.lib" })
+		filter({})
+	end
 
 	filter("system:linux or system:macosx")
 	links({ "vulkan" })

@@ -3,6 +3,9 @@
 #include "general/pch.h"
 #include "stb_image.h"
 
+#include <cstdio>
+#include <print>
+
 ae::CursorContainer::CursorContainer(GLFWcursor *pCursor) : m_pCursor(pCursor) {}
 
 ae::CursorContainer::~CursorContainer()
@@ -11,8 +14,6 @@ ae::CursorContainer::~CursorContainer()
     {
         glfwDestroyCursor(m_pCursor);
     }
-
-    AE_LOG_TRACE("Cursor destroyed");
 }
 
 ae::Cursor::Cursor() : m_pContainer(nullptr), m_XHot(0), m_YHot(0) {}
@@ -37,12 +38,12 @@ ae::Cursor::Cursor(const std::string &path) : m_pContainer(nullptr), m_XHot(0), 
         if (cursor)
         {
             m_pContainer = std::make_shared<CursorContainer>(cursor);
-            AE_LOG_TRACE("Cursor created from path: {}", path);
+            AE_LOG(AE_TRACE,"Cursor created from path: {}", path);
         }
 
         else
         {
-            AE_LOG_WARNING("Failed to create Cursor from image path '{}'", path);
+            AE_LOG(AE_WARNING,"Failed to create Cursor from image path '{}'", path);
             m_pContainer = std::make_shared<CursorContainer>(nullptr);
         }
     }
@@ -75,12 +76,12 @@ ae::Cursor::Cursor(const std::string &path, int32_t xHot, int32_t yHot)
         if (cursor)
         {
             m_pContainer = std::make_shared<CursorContainer>(cursor);
-            AE_LOG_TRACE("Cursor created from path '{}'", path);
+            AE_LOG(AE_TRACE,"Cursor created from path '{}'", path);
         }
 
         else
         {
-            AE_LOG_WARNING("Failed to create Cursor from image path '{}'", path);
+            AE_LOG(AE_WARNING,"Failed to create Cursor from image path '{}'", path);
             m_pContainer = std::make_shared<CursorContainer>(nullptr);
         }
     }
@@ -97,8 +98,14 @@ ae::Cursor::Cursor(const Cursor &cursor) = default;
 
 ae::Cursor::~Cursor() = default;
 
-ae::Cursor &ae::Cursor::operator=(const Cursor &cursor)
+ae::Cursor &ae::Cursor::operator=(const Cursor &other)
 {
-    m_pContainer = cursor.m_pContainer;
+    if (&other != this)
+    {
+        m_pContainer = other.m_pContainer;
+        m_XHot = other.m_XHot;
+        m_YHot = other.m_YHot;
+    }
+
     return *this;
 }

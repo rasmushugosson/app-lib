@@ -1,55 +1,59 @@
 #pragma once
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-
-#include <stdint.h>
-#include <vector>
-#include <unordered_map>
-
 #include "Log.h"
 #include "Window.h"
 
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <stdint.h>
+#include <unordered_map>
+#include <vector>
+
 namespace ae
 {
-	class WindowManager
-	{
-	public:
-		WindowManager();
-		WindowManager(const WindowManager&) = delete;
-		WindowManager& operator=(const WindowManager&) = delete;
-		~WindowManager();
+class WindowManager
+{
+  public:
+    WindowManager();
+    WindowManager(const WindowManager &) = delete;
+    WindowManager &operator=(const WindowManager &) = delete;
+    ~WindowManager();
 
-		inline static WindowManager& Get() { return m_Instance; }
+    inline static WindowManager &Get()
+    {
+        return m_Instance;
+    }
 
-		void AddWindow(Window* window);
-		void RemoveWindow(Window* window);
+    void AddWindow(Window *window);
+    void RemoveWindow(Window *window);
 
-		void RecordKey(GLFWwindow* pWindow, int key, int scancode, int action, int mods);
-		void RecordChar(GLFWwindow* pWindow, unsigned int c);
+    void RecordKey(GLFWwindow *pWindow, int key, int scancode, int action, int mods);
+    void RecordChar(GLFWwindow *pWindow, unsigned int c);
 
-		void RecordMouseButton(GLFWwindow* pWindow, int button, int action, int mods);
-		void RecordMouseMoved(GLFWwindow* pWindow, double x, double y);
-		void RecordMouseScrolled(GLFWwindow* pWindow, double x, double y);
-		void RecordMouseEntered(GLFWwindow* pWindow, int entered);
+    void RecordMouseButton(GLFWwindow *pWindow, int button, int action, int mods);
+    void RecordMouseMoved(GLFWwindow *pWindow, double x, double y);
+    void RecordMouseScrolled(GLFWwindow *pWindow, double x, double y);
+    void RecordMouseEntered(GLFWwindow *pWindow, int entered);
 
-		void RecordWindowResize(GLFWwindow* pWindow, uint32_t width, uint32_t height);
-		void RecordWindowMinimalized(GLFWwindow* pWindow);
-		void RecordWindowMaximalized(GLFWwindow* pWindow);
-		void RecordWindowRestored(GLFWwindow* pWindow);
-		void RecordWindowMoved(GLFWwindow* pWindow, uint32_t x, uint32_t y);
-		void RecordWindowFocused(GLFWwindow* pWindow, int focused);
+    void RecordWindowResize(GLFWwindow *pWindow, uint32_t width, uint32_t height);
+    void RecordWindowMinimalized(GLFWwindow *pWindow);
+    void RecordWindowMaximalized(GLFWwindow *pWindow);
+    void RecordWindowRestored(GLFWwindow *pWindow);
+    void RecordWindowMoved(GLFWwindow *pWindow, uint32_t x, uint32_t y);
+    void RecordWindowFocused(GLFWwindow *pWindow, int focused);
 
-		void RecordMonitor(GLFWmonitor* pMonitor, int event);
+    void RecordMonitor(GLFWmonitor *pMonitor, int event);
 
-		void DeactivateAllWindows();
-	private:
-		void Init();
-		void Terminate();
-	private:
-		std::vector<Window*> m_Windows;
-		std::unordered_map<GLFWwindow*, uint32_t> m_WindowMap;
+    void DeactivateAllWindows();
 
-		static WindowManager m_Instance;
-	};
-}
+  private:
+    void Init();
+    void Terminate();
+
+  private:
+    std::vector<Window *> m_Windows;
+    std::unordered_map<GLFWwindow *, uint32_t> m_WindowMap;
+
+    static WindowManager m_Instance;
+};
+} // namespace ae

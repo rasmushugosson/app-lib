@@ -18,6 +18,13 @@ ae::Window::Window(const WindowDesc &desc)
       m_AverageFrameTime(0.0), m_AverageFrameDuration(0.0), m_Fps(0.0), m_Mouse(this), m_pContext(nullptr),
       m_ClearColor{ 1.0f, 0.0f, 1.0f, 1.0f }, m_pInterface(nullptr), m_Focused(false), m_Active(false), m_Created(false)
 {
+#ifndef AE_VULKAN
+    if (desc.graphicsAPI == ae::GraphicsAPI::VULKAN)
+    {
+        AE_LOG(AE_WARNING, "A window was opened with GraphicsAPI::VULKAN, but there is no Vulkan drivers present. This "
+                           "will result in no window being opened");
+    }
+#endif // !AE_VULKAN
 }
 
 ae::Window::Window(const WindowDesc &desc, Window &parent)
@@ -26,6 +33,14 @@ ae::Window::Window(const WindowDesc &desc, Window &parent)
       m_ClearColor{ 1.0f, 0.0f, 1.0f, 1.0f }, m_pInterface(nullptr), m_Focused(false), m_Active(false), m_Created(false)
 {
     parent.AddChild(*this);
+
+#ifndef AE_VULKAN
+    if (desc.graphicsAPI == ae::GraphicsAPI::VULKAN)
+    {
+        AE_LOG(AE_WARNING, "A window was opened with GraphicsAPI::VULKAN, but there is no Vulkan drivers present. This "
+                           "will result in no window being opened");
+    }
+#endif // !AE_VULKAN
 }
 
 ae::Window::~Window() {}
@@ -34,13 +49,13 @@ ae::Window::~Window() {}
 
 void ae::Window::Create()
 {
-    AE_LOG_INFO("Creating window...");
+    AE_LOG(AE_INFO,"Creating window...");
     AE_LOG_NEWLINE();
 
 #ifdef AE_DEBUG
     if (m_Created)
     {
-        AE_LOG_WARNING("Window already created");
+        AE_LOG(AE_WARNING,"Window already created");
         return;
     }
 #endif // AE_DEBUG
@@ -98,7 +113,7 @@ void ae::Window::Create()
     m_FrameTimer.Start();
 
     AE_LOG_NEWLINE();
-    AE_LOG_INFO("Window created successfully");
+    AE_LOG(AE_INFO,"Window created successfully");
 
     m_Created = true;
 }
@@ -108,7 +123,7 @@ void ae::Window::Destroy()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to destroy window but it is not created");
+        AE_LOG(AE_WARNING,"Tried to destroy window but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -131,7 +146,7 @@ void ae::Window::Destroy()
     glfwDestroyWindow(m_pWindow);
 
     AE_LOG_NEWLINE();
-    AE_LOG_INFO("Window destroyed successfully");
+    AE_LOG(AE_INFO,"Window destroyed successfully");
 
     m_Created = false;
     m_pWindow = nullptr;
@@ -142,7 +157,7 @@ void ae::Window::Clear() const
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to clear window but it is not created");
+        AE_LOG(AE_WARNING,"Tried to clear window but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -178,7 +193,7 @@ void ae::Window::Update()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to update window but it is not created");
+        AE_LOG(AE_WARNING,"Tried to update window but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -238,7 +253,7 @@ void ae::Window::Close()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to close window but it is not created");
+        AE_LOG(AE_WARNING,"Tried to close window but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -256,7 +271,7 @@ bool ae::Window::ShouldClose() const
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to check if window should close but it is not created");
+        AE_LOG(AE_WARNING,"Tried to check if window should close but it is not created");
         return false;
     }
 #endif // AE_DEBUG
@@ -270,7 +285,7 @@ bool ae::Window::ShouldClose() const
 
     if (childrenOpen && glfwWindowShouldClose(m_pWindow))
     {
-        AE_LOG_WARNING("Tried to close Window but children are still open. This action is not valid");
+        AE_LOG(AE_WARNING,"Tried to close Window but children are still open. This action is not valid");
         glfwSetWindowShouldClose(m_pWindow, false);
     }
 
@@ -282,7 +297,7 @@ void ae::Window::SetTitle(const std::string &title)
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to set window title but it is not created");
+        AE_LOG(AE_WARNING,"Tried to set window title but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -294,7 +309,7 @@ void ae::Window::SetIconSet(const IconSet &iconSet)
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to set window icon but it is not created");
+        AE_LOG(AE_WARNING,"Tried to set window icon but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -305,7 +320,7 @@ void ae::Window::SetIconSet(const IconSet &iconSet)
         glfwSetWindowIcon(m_pWindow, static_cast<int>(iconSet.GetCount()), iconSet.GetImages());
     }
 
-    AE_LOG_TRACE("Set window icon with {} images", iconSet.GetCount());
+    AE_LOG(AE_TRACE,"Set window icon with {} images", iconSet.GetCount());
 }
 
 void ae::Window::ResetIconSet()
@@ -313,7 +328,7 @@ void ae::Window::ResetIconSet()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to reset window icon but it is not created");
+        AE_LOG(AE_WARNING,"Tried to reset window icon but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -330,7 +345,7 @@ void ae::Window::SetCursor(const Cursor &cursor)
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to set window cursor but it is not created");
+        AE_LOG(AE_WARNING,"Tried to set window cursor but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -344,7 +359,7 @@ void ae::Window::ResetCursor()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to reset window cursor but it is not created");
+        AE_LOG(AE_WARNING,"Tried to reset window cursor but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -358,7 +373,7 @@ void ae::Window::SetActive()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to set window active but it is not created");
+        AE_LOG(AE_WARNING,"Tried to set window active but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -370,12 +385,12 @@ void ae::Window::SetOnInterfaceUpdateCB(const std::function<void()> &cb)
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG_WARNING("Tried to set interface update callback but the Window is not created");
+        AE_LOG(AE_WARNING,"Tried to set interface update callback but the Window is not created");
         return;
     }
     if (!m_pInterface)
     {
-        AE_LOG_WARNING("Tried to set interface update callback but the Interface for the Window is not created");
+        AE_LOG(AE_WARNING,"Tried to set interface update callback but the Interface for the Window is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -409,7 +424,7 @@ GLFWmonitor *ae::Window::GetMonitor()
 
     if (std::cmp_less_equal(monitorCount, m_Desc.monitor))
     {
-        AE_LOG_WARNING("Invalid monitor index, using default monitor");
+        AE_LOG(AE_WARNING,"Invalid monitor index, using default monitor");
         m_Desc.monitor = 0;
     }
 
@@ -425,7 +440,7 @@ void ae::Window::CreateWindowed()
     if (m_Desc.width == 0 || std::cmp_greater(m_Desc.width, pVideoMode->width) || m_Desc.height == 0 ||
         std::cmp_greater(m_Desc.height, pVideoMode->height))
     {
-        AE_LOG_WARNING("Invalid window size, using default size");
+        AE_LOG(AE_WARNING,"Invalid window size, using default size");
 
         WindowDesc defaultDesc;
 
@@ -444,12 +459,13 @@ void ae::Window::CreateWindowed()
         pShare = m_pParent->m_pWindow;
     }
 
-    m_pWindow = glfwCreateWindow(m_Desc.width, m_Desc.height, m_Desc.title.data(), nullptr, pShare);
+    m_pWindow = glfwCreateWindow(static_cast<int>(m_Desc.width), static_cast<int>(m_Desc.height), m_Desc.title.c_str(),
+                                 nullptr, pShare);
 
     if (glfwGetPlatform() != GLFW_PLATFORM_WAYLAND)
     {
-        glfwSetWindowPos(m_pWindow, ((pVideoMode->width - m_Desc.width) / 2) + monitorX,
-                         ((pVideoMode->height - m_Desc.height) / 2) + monitorY);
+        glfwSetWindowPos(m_pWindow, static_cast<int>(((pVideoMode->width - m_Desc.width) / 2) + monitorX),
+                         static_cast<int>(((pVideoMode->height - m_Desc.height) / 2) + monitorY));
     }
 }
 
@@ -468,7 +484,8 @@ void ae::Window::CreateFullscreen()
         pShare = m_pParent->m_pWindow;
     }
 
-    m_pWindow = glfwCreateWindow(m_Desc.width, m_Desc.height, m_Desc.title.data(), pMonitor, pShare);
+    m_pWindow = glfwCreateWindow(static_cast<int>(m_Desc.width), static_cast<int>(m_Desc.height), m_Desc.title.c_str(),
+                                 pMonitor, pShare);
 }
 
 void ae::Window::InitOpenGL()
@@ -509,7 +526,7 @@ void ae::Window::CreateOpenGL()
     {
         if (m_Desc.fps == 0)
         {
-            AE_LOG_WARNING("Invalid FPS value for window, using default value");
+            AE_LOG(AE_WARNING,"Invalid FPS value for window, using default value");
             m_Desc.fps = 60;
             m_Fps = 60.0;
             m_AverageFrameTime = 1.0 / 60.0;
@@ -546,7 +563,7 @@ void ae::Window::CreateVulkan()
 
     if (m_Desc.fps == 0)
     {
-        AE_LOG_WARNING("Invalid FPS value for window, using default value");
+        AE_LOG(AE_WARNING,"Invalid FPS value for window, using default value");
         m_Desc.fps = 60;
     }
 
@@ -615,7 +632,7 @@ void ae::Window::InitInput()
         controllerIndex++;
     }
 
-    AE_LOG_TRACE("Controllers connected: {}", m_Controllers.size());
+    AE_LOG(AE_TRACE,"Controllers connected: {}", m_Controllers.size());
 }
 
 void ae::Window::OnKey(int key, int scancode, int action, int mods)
@@ -624,21 +641,21 @@ void ae::Window::OnKey(int key, int scancode, int action, int mods)
 
     if (action == GLFW_PRESS)
     {
-        m_Keyboard.SetKeyPressed(static_cast<uint32_t>(key), true);
+        m_Keyboard.SetKeyPressed(static_cast<int32_t>(key), true);
 
         if (m_OnKeyPressed)
         {
-            m_OnKeyPressed(key);
+            m_OnKeyPressed(static_cast<int32_t>(key));
         }
     }
 
     else if (action == GLFW_RELEASE)
     {
-        m_Keyboard.SetKeyPressed(static_cast<uint32_t>(key), false);
+        m_Keyboard.SetKeyPressed(static_cast<int32_t>(key), false);
 
         if (m_OnKeyReleased)
         {
-            m_OnKeyReleased(key);
+            m_OnKeyReleased(static_cast<int32_t>(key));
         }
     }
 }
@@ -647,11 +664,11 @@ void ae::Window::OnChar(unsigned int c)
 {
     m_pInterface->SendOnCharEvent(c);
 
-    m_Keyboard.SetKeyTyped(c);
+    m_Keyboard.SetKeyTyped(static_cast<int32_t>(c));
 
     if (m_OnKeyTyped)
     {
-        m_OnKeyTyped(c);
+        m_OnKeyTyped(static_cast<int32_t>(c));
     }
 }
 
@@ -661,7 +678,7 @@ void ae::Window::OnMouseButton(int button, int action, int mods)
 
     if (action == GLFW_PRESS)
     {
-        m_Mouse.SetPressed(static_cast<uint32_t>(button), true);
+        m_Mouse.SetPressed(static_cast<int32_t>(button), true);
 
         if (m_OnMouseButtonPressed)
         {
@@ -670,7 +687,7 @@ void ae::Window::OnMouseButton(int button, int action, int mods)
     }
     else if (action == GLFW_RELEASE)
     {
-        m_Mouse.SetPressed(static_cast<uint32_t>(button), false);
+        m_Mouse.SetPressed(static_cast<int32_t>(button), false);
 
         if (m_OnMouseButtonReleased)
         {
@@ -733,17 +750,17 @@ void ae::Window::OnWindowResize(uint32_t width, uint32_t height)
 
 void ae::Window::OnWindowMinimalized()
 {
-    if (m_OnWindowMinimalized)
+    if (m_OnWindowMinimized)
     {
-        m_OnWindowMinimalized();
+        m_OnWindowMinimized();
     }
 }
 
 void ae::Window::OnWindowMaximalized()
 {
-    if (m_OnWindowMaximalized)
+    if (m_OnWindowMaximized)
     {
-        m_OnWindowMaximalized();
+        m_OnWindowMaximized();
     }
 }
 

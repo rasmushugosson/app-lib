@@ -470,9 +470,9 @@ void ae::VulkanManager::FindDeviceData()
 
     m_Vendor = vendorString;
 
-    AE_LOG_TRACE("Vulkan Version: {}", m_Version);
-    AE_LOG_TRACE("Vulkan Renderer: {}", m_Renderer);
-    AE_LOG_TRACE("Vulkan Vendor: {}", m_Vendor);
+    AE_LOG(AE_TRACE,"Vulkan Version: {}", m_Version);
+    AE_LOG(AE_TRACE,"Vulkan Renderer: {}", m_Renderer);
+    AE_LOG(AE_TRACE,"Vulkan Vendor: {}", m_Vendor);
 }
 
 void ae::VulkanManager::ResetDeviceData()

@@ -103,8 +103,8 @@ void ae::OpenALCheckErrors(const std::string &function, const std::string &file,
 
             if (error >= 0 && error < 6)
             {
-                AE_THROW_RUNTIME_ERROR("OpenAL error\nCode: {}\nCall: {}\nFile: {}\nLine: {}",
-                                       s_OpenGLErrorLookup[error], function, fileName, line);
+                AE_THROW_RUNTIME_ERROR("OpenAL error\nCode: {}\nCall: {}\nFile: {}\nLine: {}", s_OpenALLookup[error],
+                                       function, fileName, line);
             }
             else
             {
