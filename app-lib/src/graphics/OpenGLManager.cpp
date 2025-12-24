@@ -3,9 +3,7 @@
 
 ae::OpenGLManager ae::OpenGLManager::m_Instance;
 
-ae::OpenGLManager::OpenGLManager() : m_ContextCount(0), m_Version("None"), m_Renderer("None"), m_Vendor("None") {}
-
-ae::OpenGLManager::~OpenGLManager() = default;
+ae::OpenGLManager::OpenGLManager() : m_ContextCount(0), m_Version("None"), m_Renderer("None"), m_Vendor("None") {};
 
 void ae::OpenGLManager::AddContext()
 {

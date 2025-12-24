@@ -10,7 +10,7 @@ namespace ae
 		OpenGLContext(Window& window);
 		OpenGLContext(const OpenGLContext&) = delete;
 		OpenGLContext& operator=(const OpenGLContext&) = delete;
-		~OpenGLContext();
+		~OpenGLContext() = default;
 	protected:
 		bool CreateImpl() override;
 		void ActivateImpl() override;

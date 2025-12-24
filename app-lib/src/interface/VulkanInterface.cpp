@@ -9,7 +9,7 @@
 
 ae::VulkanInterface::VulkanInterface(Window &window) : Interface(window), m_DescriptorPool(VK_NULL_HANDLE) {}
 
-ae::VulkanInterface::~VulkanInterface() {}
+ae::VulkanInterface::~VulkanInterface() = default;
 
 bool ae::VulkanInterface::CreateImpl()
 {

@@ -1,7 +1,7 @@
 #include "general/pch.h"
 
 // Author: Rasmus Hugosson
-// Date: 2025-12-18
+// Date: 2025-12-24
 
 // Description: This is a simple example program demonstrating how
 // this library can be used to create a basic graphics application.
@@ -86,7 +86,7 @@ static void Demo()
         windowDesc.fullscreen = false;
         windowDesc.vsync = true;
         windowDesc.fps = 165; // Not actually used since vsync is enabled
-        windowDesc.graphicsAPI = ae::GraphicsAPI::VULKAN;
+        windowDesc.graphicsAPI = ae::GraphicsAPI::OPENGL;
 
         // We can now create a window with the descriptor
         ae::Window window(windowDesc);

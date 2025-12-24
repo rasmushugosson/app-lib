@@ -74,6 +74,4 @@ void ae::Context::Destroy()
     m_Created = false;
 }
 
-void ae::Context::OnResize([[maybe_unused]] uint32_t width, [[maybe_unused]] uint32_t height)
-{
-}
+void ae::Context::OnResize([[maybe_unused]] uint32_t width, [[maybe_unused]] uint32_t height) {}

@@ -5,8 +5,6 @@
 
 ae::OpenGLContext::OpenGLContext(Window &window) : Context(window) {}
 
-ae::OpenGLContext::~OpenGLContext() = default;
-
 bool ae::OpenGLContext::CreateImpl()
 {
     glfwMakeContextCurrent(m_Window.GetWindow());

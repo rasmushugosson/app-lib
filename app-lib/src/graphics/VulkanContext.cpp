@@ -8,14 +8,12 @@
 
 ae::VulkanContext::VulkanContext(Window &window)
     : Context(window), m_Surface(VK_NULL_HANDLE), m_SwapChain(VK_NULL_HANDLE),
-      m_SwapChainImageFormat(VK_FORMAT_UNDEFINED), m_SwapChainExtent(), m_SwapChainImages(), m_SwapChainImageViews(),
-      m_RenderPass(VK_NULL_HANDLE), m_SwapChainFramebuffers(), m_CommandPool(VK_NULL_HANDLE), m_CommandBuffers(),
-      m_ImageAvailableSemaphores(), m_RenderFinishedSemaphores(), m_InFlightFences(), m_CurrentFrame(0),
-      m_CurrentImageIndex(0), m_NeedsResize(false)
+      m_SwapChainImageFormat(VK_FORMAT_UNDEFINED), m_SwapChainExtent(), m_RenderPass(VK_NULL_HANDLE),
+      m_CommandPool(VK_NULL_HANDLE), m_CurrentFrame(0), m_CurrentImageIndex(0), m_NeedsResize(false)
 {
 }
 
-ae::VulkanContext::~VulkanContext() {}
+ae::VulkanContext::~VulkanContext() = default;
 
 void ae::VulkanContext::WaitForPreviousFrame()
 {
@@ -63,7 +61,7 @@ void ae::VulkanContext::BeginRenderPass()
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     renderPassInfo.renderPass = m_RenderPass;
     renderPassInfo.framebuffer = m_SwapChainFramebuffers[m_CurrentImageIndex];
-    renderPassInfo.renderArea.offset = { 0, 0 };
+    renderPassInfo.renderArea.offset = { .x = 0, .y = 0 };
     renderPassInfo.renderArea.extent = m_SwapChainExtent;
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
@@ -80,22 +78,20 @@ void ae::VulkanContext::SubmitCommandBuffer()
 {
     vkEndCommandBuffer(m_CommandBuffers[m_CurrentImageIndex]);
 
-    // Wait on the acquire semaphore (indexed by frame counter, as used in AcquireNextImage)
-    VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[m_CurrentFrame] };
-    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    std::array<VkSemaphore, 1> waitSemaphores = { m_ImageAvailableSemaphores[m_CurrentFrame] };
+    std::array<VkPipelineStageFlags, 1> waitStages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
-    // Signal the render-finished semaphore indexed by acquired image to avoid reuse issues
-    VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_CurrentImageIndex] };
+    std::array<VkSemaphore, 1> signalSemaphores = { m_RenderFinishedSemaphores[m_CurrentImageIndex] };
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.pWaitSemaphores = waitSemaphores.data();
+    submitInfo.pWaitDstStageMask = waitStages.data();
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &m_CommandBuffers[m_CurrentImageIndex];
     submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
+    submitInfo.pSignalSemaphores = signalSemaphores.data();
 
     // Signal the fence for this frame so we know when we can reuse its acquire semaphore
     if (vkQueueSubmit(VulkanManager::Get().GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame]) !=
@@ -136,7 +132,7 @@ void ae::VulkanContext::PresentImage()
 
 bool ae::VulkanContext::CreateImpl()
 {
-    VulkanManager::Get().AddContext(m_Window.GetDesc().title.data());
+    VulkanManager::Get().AddContext(m_Window.GetDesc().title);
 
     CreateSurface();
 
@@ -280,7 +276,8 @@ void ae::VulkanContext::CreateSwapChain()
 
     else
     {
-        int width, height;
+        int width;
+        int height;
         glfwGetFramebufferSize(m_Window.GetWindow(), &width, &height);
 
         m_SwapChainExtent.width = std::clamp((uint32_t)width, surfaceCapabilities.minImageExtent.width,
@@ -357,7 +354,7 @@ void ae::VulkanContext::CreateSwapChainImageViews()
 
 void ae::VulkanContext::DestroySwapChainImageViews()
 {
-    for (auto imageView : m_SwapChainImageViews)
+    for (auto *imageView : m_SwapChainImageViews)
     {
         vkDestroyImageView(VulkanManager::Get().GetDevice(), imageView, nullptr);
     }
@@ -412,13 +409,13 @@ void ae::VulkanContext::CreateFramebuffers()
 
     for (size_t i = 0; i < m_SwapChainImageViews.size(); i++)
     {
-        VkImageView attachments[] = { m_SwapChainImageViews[i] };
+        std::array<VkImageView, 1> attachments = { m_SwapChainImageViews[i] };
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = m_RenderPass;
         framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = m_SwapChainExtent.width;
         framebufferInfo.height = m_SwapChainExtent.height;
         framebufferInfo.layers = 1;
@@ -433,7 +430,7 @@ void ae::VulkanContext::CreateFramebuffers()
 
 void ae::VulkanContext::DestroyFramebuffers()
 {
-    for (auto framebuffer : m_SwapChainFramebuffers)
+    for (auto *framebuffer : m_SwapChainFramebuffers)
     {
         vkDestroyFramebuffer(VulkanManager::Get().GetDevice(), framebuffer, nullptr);
     }

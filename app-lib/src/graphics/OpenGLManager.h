@@ -11,7 +11,7 @@ namespace ae
 	public:
 		OpenGLManager(const OpenGLManager&) = delete;
 		OpenGLManager& operator=(const OpenGLManager&) = delete;
-		~OpenGLManager();
+		~OpenGLManager() = default;
 
 		static inline OpenGLManager& Get()
 		{

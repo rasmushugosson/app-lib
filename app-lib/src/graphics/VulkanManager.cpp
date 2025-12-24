@@ -5,6 +5,9 @@
 #include "OpenGL.h"
 #include "VulkanManager.h"
 
+#include <algorithm>
+#include <utility>
+
 ae::VulkanManager ae::VulkanManager::m_Instance;
 
 ae::VulkanManager::VulkanManager()
@@ -14,7 +17,7 @@ ae::VulkanManager::VulkanManager()
 {
 }
 
-ae::VulkanManager::~VulkanManager() {}
+ae::VulkanManager::~VulkanManager() = default;
 
 void ae::VulkanManager::AddContext(const std::string &name)
 {
@@ -62,14 +65,14 @@ void ae::VulkanManager::AddSurface(VkSurfaceKHR surface)
 
 void ae::VulkanManager::RemoveSurface(VkSurfaceKHR surface)
 {
-    auto it = std::find(m_Surfaces.begin(), m_Surfaces.end(), surface);
+    auto it = std::ranges::find(m_Surfaces, surface);
 
     if (it != m_Surfaces.end())
     {
         m_Surfaces.erase(it);
     }
 
-    if (m_Surfaces.size() == 0)
+    if (m_Surfaces.empty())
     {
         ResetGraphicsQueue();
         DestroyDevices();
@@ -101,7 +104,7 @@ void ae::VulkanManager::CreateInstance(const std::string &name)
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
 
-    if (s_ValidationLayers.size() > 0)
+    if (!s_ValidationLayers.empty())
     {
         createInfo.enabledLayerCount = static_cast<uint32_t>(s_ValidationLayers.size());
         createInfo.ppEnabledLayerNames = s_ValidationLayers.data();
@@ -206,7 +209,7 @@ void ae::VulkanManager::CreateLogicalDevice()
     createInfo.enabledExtensionCount = static_cast<uint32_t>(s_DeviceExtensions.size());
     createInfo.ppEnabledExtensionNames = s_DeviceExtensions.data();
 
-    if (s_ValidationLayers.size() > 0)
+    if (!s_ValidationLayers.empty())
     {
         createInfo.enabledLayerCount = static_cast<uint32_t>(s_ValidationLayers.size());
         createInfo.ppEnabledLayerNames = s_ValidationLayers.data();
@@ -365,7 +368,7 @@ int32_t ae::VulkanManager::FindQueueFamilies(VkPhysicalDevice device)
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
 
-    for (int32_t i = 0; i < static_cast<int32_t>(queueFamilyCount); i++)
+    for (int32_t i = 0; std::cmp_less(i, queueFamilyCount); i++)
     {
         if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
