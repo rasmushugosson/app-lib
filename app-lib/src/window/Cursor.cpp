@@ -38,12 +38,12 @@ ae::Cursor::Cursor(const std::string &path) : m_pContainer(nullptr), m_XHot(0), 
         if (cursor)
         {
             m_pContainer = std::make_shared<CursorContainer>(cursor);
-            AE_LOG(AE_TRACE,"Cursor created from path: {}", path);
+            AE_LOG(AE_TRACE, "Cursor created from path: {}", path);
         }
 
         else
         {
-            AE_LOG(AE_WARNING,"Failed to create Cursor from image path '{}'", path);
+            AE_LOG(AE_WARNING, "Failed to create Cursor from image path '{}'", path);
             m_pContainer = std::make_shared<CursorContainer>(nullptr);
         }
     }
@@ -76,12 +76,12 @@ ae::Cursor::Cursor(const std::string &path, int32_t xHot, int32_t yHot)
         if (cursor)
         {
             m_pContainer = std::make_shared<CursorContainer>(cursor);
-            AE_LOG(AE_TRACE,"Cursor created from path '{}'", path);
+            AE_LOG(AE_TRACE, "Cursor created from path '{}'", path);
         }
 
         else
         {
-            AE_LOG(AE_WARNING,"Failed to create Cursor from image path '{}'", path);
+            AE_LOG(AE_WARNING, "Failed to create Cursor from image path '{}'", path);
             m_pContainer = std::make_shared<CursorContainer>(nullptr);
         }
     }

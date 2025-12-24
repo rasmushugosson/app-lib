@@ -160,13 +160,13 @@ void ae::WindowManager::Init()
     if (!glfwInit())
     {
         AE_LOG(AE_FATAL, "Failed to initialize GLFW");
-        AE_LOG(AE_FATAL,"Terminating application...");
+        AE_LOG(AE_FATAL, "Terminating application...");
         exit(EXIT_FAILURE);
     }
 
     glfwSetErrorCallback(GLFWErrorCallback);
 
-    AE_LOG(AE_INFO,"GLFW initialized");
+    AE_LOG(AE_INFO, "GLFW initialized");
 }
 
 void ae::WindowManager::Terminate()
@@ -179,7 +179,7 @@ void ae::WindowManager::RecordKey(GLFWwindow *pWindow, int key, int scancode, in
 #ifdef AE_DEBUG
     if (!m_WindowMap.contains(pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to record event but Window was not found in WindowManager");
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
         return;
     }
 #endif // AE_DEBUG
@@ -191,7 +191,7 @@ void ae::WindowManager::RecordMouseButton(GLFWwindow *pWindow, int button, int a
 #ifdef AE_DEBUG
     if (!m_WindowMap.contains(pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to record event but Window was not found in WindowManager");
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
         return;
     }
 #endif // AE_DEBUG
@@ -203,7 +203,7 @@ void ae::WindowManager::RecordMouseMoved(GLFWwindow *pWindow, double x, double y
 #ifdef AE_DEBUG
     if (!m_WindowMap.contains(pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to record event but Window was not found in WindowManager");
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
         return;
     }
 #endif // AE_DEBUG
@@ -215,7 +215,7 @@ void ae::WindowManager::RecordMouseScrolled(GLFWwindow *pWindow, double x, doubl
 #ifdef AE_DEBUG
     if (!m_WindowMap.contains(pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to record event but Window was not found in WindowManager");
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
         return;
     }
 #endif // AE_DEBUG
@@ -227,7 +227,7 @@ void ae::WindowManager::RecordMouseEntered(GLFWwindow *pWindow, int entered)
 #ifdef AE_DEBUG
     if (!m_WindowMap.contains(pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to record event but Window was not found in WindowManager");
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
         return;
     }
 #endif // AE_DEBUG
@@ -239,7 +239,7 @@ void ae::WindowManager::RecordWindowResize(GLFWwindow *pWindow, uint32_t width, 
 #ifdef AE_DEBUG
     if (!m_WindowMap.contains(pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to record event but Window was not found in WindowManager");
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
         return;
     }
 #endif // AE_DEBUG
@@ -251,7 +251,7 @@ void ae::WindowManager::RecordWindowFocused(GLFWwindow *pWindow, int focused)
 #ifdef AE_DEBUG
     if (!m_WindowMap.contains(pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to record event but Window was not found in WindowManager");
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
         return;
     }
 #endif // AE_DEBUG
@@ -263,7 +263,7 @@ void ae::WindowManager::RecordWindowMinimalized(GLFWwindow *pWindow)
 #ifdef AE_DEBUG
     if (!m_WindowMap.contains(pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to record event but Window was not found in WindowManager");
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
         return;
     }
 #endif // AE_DEBUG
@@ -275,7 +275,7 @@ void ae::WindowManager::RecordWindowMaximalized(GLFWwindow *pWindow)
 #ifdef AE_DEBUG
     if (!m_WindowMap.contains(pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to record event but Window was not found in WindowManager");
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
         return;
     }
 #endif // AE_DEBUG
@@ -287,7 +287,7 @@ void ae::WindowManager::RecordWindowRestored(GLFWwindow *pWindow)
 #ifdef AE_DEBUG
     if (!m_WindowMap.contains(pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to record event but Window was not found in WindowManager");
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
         return;
     }
 #endif // AE_DEBUG
@@ -299,7 +299,7 @@ void ae::WindowManager::RecordWindowMoved(GLFWwindow *pWindow, uint32_t x, uint3
 #ifdef AE_DEBUG
     if (!m_WindowMap.contains(pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to record event but Window was not found in WindowManager");
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
         return;
     }
 #endif // AE_DEBUG

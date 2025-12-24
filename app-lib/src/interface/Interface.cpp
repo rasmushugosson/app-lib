@@ -25,7 +25,7 @@ void ae::Interface::Create()
 #ifdef AE_DEBUG
     if (m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to create Interface but it was already created");
+        AE_LOG(AE_WARNING, "Tried to create Interface but it was already created");
         return;
     }
 #endif // AE_DEBUG
@@ -59,7 +59,7 @@ void ae::Interface::Prepare()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to prepare Interface but it was not created");
+        AE_LOG(AE_WARNING, "Tried to prepare Interface but it was not created");
         return;
     }
 #endif // AE_DEBUG
@@ -72,7 +72,7 @@ void ae::Interface::Update()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to update Interface but it was not created");
+        AE_LOG(AE_WARNING, "Tried to update Interface but it was not created");
         return;
     }
 #endif // AE_DEBUG
@@ -95,7 +95,7 @@ void ae::Interface::Finish()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to finish Interface but it was not created");
+        AE_LOG(AE_WARNING, "Tried to finish Interface but it was not created");
         return;
     }
 #endif // AE_DEBUG
@@ -109,7 +109,7 @@ void ae::Interface::Destroy()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to destroy Interface but it was not created");
+        AE_LOG(AE_WARNING, "Tried to destroy Interface but it was not created");
         return;
     }
 #endif // AE_DEBUG

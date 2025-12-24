@@ -24,7 +24,7 @@ void ae::Context::Create()
 #ifdef AE_DEBUG
     if (m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to create graphics Context for Window but it has already been created");
+        AE_LOG(AE_WARNING, "Tried to create graphics Context for Window but it has already been created");
         return;
     }
 #endif // AE_DEBUG
@@ -42,7 +42,7 @@ void ae::Context::Activate()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to activate graphics Context but it is not created");
+        AE_LOG(AE_WARNING, "Tried to activate graphics Context but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -54,7 +54,7 @@ void ae::Context::Deactivate()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to deactivate graphics Context but it is not created");
+        AE_LOG(AE_WARNING, "Tried to deactivate graphics Context but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -66,10 +66,14 @@ void ae::Context::Destroy()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to destroy graphics Context but it is already not created");
+        AE_LOG(AE_WARNING, "Tried to destroy graphics Context but it is already not created");
         return;
     }
 #endif // AE_DEBUG
     DestroyImpl();
     m_Created = false;
+}
+
+void ae::Context::OnResize([[maybe_unused]] uint32_t width, [[maybe_unused]] uint32_t height)
+{
 }

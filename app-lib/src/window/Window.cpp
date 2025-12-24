@@ -49,13 +49,13 @@ ae::Window::~Window() {}
 
 void ae::Window::Create()
 {
-    AE_LOG(AE_INFO,"Creating window...");
+    AE_LOG(AE_INFO, "Creating window...");
     AE_LOG_NEWLINE();
 
 #ifdef AE_DEBUG
     if (m_Created)
     {
-        AE_LOG(AE_WARNING,"Window already created");
+        AE_LOG(AE_WARNING, "Window already created");
         return;
     }
 #endif // AE_DEBUG
@@ -113,7 +113,7 @@ void ae::Window::Create()
     m_FrameTimer.Start();
 
     AE_LOG_NEWLINE();
-    AE_LOG(AE_INFO,"Window created successfully");
+    AE_LOG(AE_INFO, "Window created successfully");
 
     m_Created = true;
 }
@@ -123,7 +123,7 @@ void ae::Window::Destroy()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to destroy window but it is not created");
+        AE_LOG(AE_WARNING, "Tried to destroy window but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -146,7 +146,7 @@ void ae::Window::Destroy()
     glfwDestroyWindow(m_pWindow);
 
     AE_LOG_NEWLINE();
-    AE_LOG(AE_INFO,"Window destroyed successfully");
+    AE_LOG(AE_INFO, "Window destroyed successfully");
 
     m_Created = false;
     m_pWindow = nullptr;
@@ -157,7 +157,7 @@ void ae::Window::Clear() const
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to clear window but it is not created");
+        AE_LOG(AE_WARNING, "Tried to clear window but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -193,7 +193,7 @@ void ae::Window::Update()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to update window but it is not created");
+        AE_LOG(AE_WARNING, "Tried to update window but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -253,7 +253,7 @@ void ae::Window::Close()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to close window but it is not created");
+        AE_LOG(AE_WARNING, "Tried to close window but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -271,7 +271,7 @@ bool ae::Window::ShouldClose() const
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to check if window should close but it is not created");
+        AE_LOG(AE_WARNING, "Tried to check if window should close but it is not created");
         return false;
     }
 #endif // AE_DEBUG
@@ -285,7 +285,7 @@ bool ae::Window::ShouldClose() const
 
     if (childrenOpen && glfwWindowShouldClose(m_pWindow))
     {
-        AE_LOG(AE_WARNING,"Tried to close Window but children are still open. This action is not valid");
+        AE_LOG(AE_WARNING, "Tried to close Window but children are still open. This action is not valid");
         glfwSetWindowShouldClose(m_pWindow, false);
     }
 
@@ -297,7 +297,7 @@ void ae::Window::SetTitle(const std::string &title)
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to set window title but it is not created");
+        AE_LOG(AE_WARNING, "Tried to set window title but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -309,7 +309,7 @@ void ae::Window::SetIconSet(const IconSet &iconSet)
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to set window icon but it is not created");
+        AE_LOG(AE_WARNING, "Tried to set window icon but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -320,7 +320,7 @@ void ae::Window::SetIconSet(const IconSet &iconSet)
         glfwSetWindowIcon(m_pWindow, static_cast<int>(iconSet.GetCount()), iconSet.GetImages());
     }
 
-    AE_LOG(AE_TRACE,"Set window icon with {} images", iconSet.GetCount());
+    AE_LOG(AE_TRACE, "Set window icon with {} images", iconSet.GetCount());
 }
 
 void ae::Window::ResetIconSet()
@@ -328,7 +328,7 @@ void ae::Window::ResetIconSet()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to reset window icon but it is not created");
+        AE_LOG(AE_WARNING, "Tried to reset window icon but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -345,7 +345,7 @@ void ae::Window::SetCursor(const Cursor &cursor)
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to set window cursor but it is not created");
+        AE_LOG(AE_WARNING, "Tried to set window cursor but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -359,7 +359,7 @@ void ae::Window::ResetCursor()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to reset window cursor but it is not created");
+        AE_LOG(AE_WARNING, "Tried to reset window cursor but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -373,7 +373,7 @@ void ae::Window::SetActive()
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to set window active but it is not created");
+        AE_LOG(AE_WARNING, "Tried to set window active but it is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -385,12 +385,12 @@ void ae::Window::SetOnInterfaceUpdateCB(const std::function<void()> &cb)
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING,"Tried to set interface update callback but the Window is not created");
+        AE_LOG(AE_WARNING, "Tried to set interface update callback but the Window is not created");
         return;
     }
     if (!m_pInterface)
     {
-        AE_LOG(AE_WARNING,"Tried to set interface update callback but the Interface for the Window is not created");
+        AE_LOG(AE_WARNING, "Tried to set interface update callback but the Interface for the Window is not created");
         return;
     }
 #endif // AE_DEBUG
@@ -424,7 +424,7 @@ GLFWmonitor *ae::Window::GetMonitor()
 
     if (std::cmp_less_equal(monitorCount, m_Desc.monitor))
     {
-        AE_LOG(AE_WARNING,"Invalid monitor index, using default monitor");
+        AE_LOG(AE_WARNING, "Invalid monitor index, using default monitor");
         m_Desc.monitor = 0;
     }
 
@@ -440,7 +440,7 @@ void ae::Window::CreateWindowed()
     if (m_Desc.width == 0 || std::cmp_greater(m_Desc.width, pVideoMode->width) || m_Desc.height == 0 ||
         std::cmp_greater(m_Desc.height, pVideoMode->height))
     {
-        AE_LOG(AE_WARNING,"Invalid window size, using default size");
+        AE_LOG(AE_WARNING, "Invalid window size, using default size");
 
         WindowDesc defaultDesc;
 
@@ -526,7 +526,7 @@ void ae::Window::CreateOpenGL()
     {
         if (m_Desc.fps == 0)
         {
-            AE_LOG(AE_WARNING,"Invalid FPS value for window, using default value");
+            AE_LOG(AE_WARNING, "Invalid FPS value for window, using default value");
             m_Desc.fps = 60;
             m_Fps = 60.0;
             m_AverageFrameTime = 1.0 / 60.0;
@@ -563,7 +563,7 @@ void ae::Window::CreateVulkan()
 
     if (m_Desc.fps == 0)
     {
-        AE_LOG(AE_WARNING,"Invalid FPS value for window, using default value");
+        AE_LOG(AE_WARNING, "Invalid FPS value for window, using default value");
         m_Desc.fps = 60;
     }
 
@@ -632,7 +632,7 @@ void ae::Window::InitInput()
         controllerIndex++;
     }
 
-    AE_LOG(AE_TRACE,"Controllers connected: {}", m_Controllers.size());
+    AE_LOG(AE_TRACE, "Controllers connected: {}", m_Controllers.size());
 }
 
 void ae::Window::OnKey(int key, int scancode, int action, int mods)
@@ -741,6 +741,11 @@ void ae::Window::OnWindowResize(uint32_t width, uint32_t height)
 {
     m_Desc.width = width;
     m_Desc.height = height;
+
+    if (m_pContext)
+    {
+        m_pContext->OnResize(width, height);
+    }
 
     if (m_OnWindowResize)
     {

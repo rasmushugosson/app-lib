@@ -634,6 +634,7 @@ class Context
     void Activate();
     void Deactivate();
     void Destroy();
+    virtual void OnResize(uint32_t width, uint32_t height);
 
     virtual bool CreateImpl() = 0;
     virtual void ActivateImpl() = 0;

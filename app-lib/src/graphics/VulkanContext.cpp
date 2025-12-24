@@ -11,7 +11,7 @@ ae::VulkanContext::VulkanContext(Window &window)
       m_SwapChainImageFormat(VK_FORMAT_UNDEFINED), m_SwapChainExtent(), m_SwapChainImages(), m_SwapChainImageViews(),
       m_RenderPass(VK_NULL_HANDLE), m_SwapChainFramebuffers(), m_CommandPool(VK_NULL_HANDLE), m_CommandBuffers(),
       m_ImageAvailableSemaphores(), m_RenderFinishedSemaphores(), m_InFlightFences(), m_CurrentFrame(0),
-      m_CurrentImageIndex(0)
+      m_CurrentImageIndex(0), m_NeedsResize(false)
 {
 }
 
@@ -19,8 +19,12 @@ ae::VulkanContext::~VulkanContext() {}
 
 void ae::VulkanContext::WaitForPreviousFrame()
 {
-    // Wait for the fence associated with this frame index before using its acquire semaphore
-    // This ensures the previous frame that used this semaphore has completed its submit
+    if (m_NeedsResize)
+    {
+        RecreateSwapChain();
+        m_NeedsResize = false;
+    }
+
     vkWaitForFences(VulkanManager::Get().GetDevice(), 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
 }
 
@@ -542,8 +546,17 @@ void ae::VulkanContext::RecreateSwapChain()
     CreateCommandBuffers();
     CreateSyncObjects();
 
-    // Reset frame counter since sync object count may have changed
     m_CurrentFrame = 0;
+}
+
+void ae::VulkanContext::OnResize(uint32_t width, uint32_t height)
+{
+    if (width == 0 || height == 0)
+    {
+        return;
+    }
+
+    m_NeedsResize = true;
 }
 
 #endif // AE_VULKAN

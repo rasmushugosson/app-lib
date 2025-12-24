@@ -62,6 +62,7 @@ namespace ae
 		void ActivateImpl() override;
 		void DeactivateImpl() override;
 		void DestroyImpl() override;
+		void OnResize(uint32_t width, uint32_t height) override;
 	private:
 		void CreateSurface();
 		void DestroySurface();
@@ -110,6 +111,7 @@ namespace ae
 
 		uint32_t m_CurrentFrame;
 		uint32_t m_CurrentImageIndex;
+		bool m_NeedsResize;
 	};
 }
 
