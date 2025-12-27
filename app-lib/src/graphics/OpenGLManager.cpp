@@ -1,5 +1,6 @@
-#include "OpenGLManager.h"
 #include "general/pch.h"
+
+#include "OpenGLManager.h"
 
 ae::OpenGLManager ae::OpenGLManager::m_Instance;
 

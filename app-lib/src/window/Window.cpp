@@ -1,7 +1,8 @@
+#include "general/pch.h"
+
 #include "OpenGL.h"
 #include "Vulkan.h"
 #include "Window.h"
-#include "general/pch.h"
 #include "graphics/Context.h"
 #include "graphics/OpenGLContext.h"
 #include "graphics/VulkanContext.h"

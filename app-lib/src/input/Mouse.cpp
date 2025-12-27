@@ -1,5 +1,6 @@
-#include "Window.h"
 #include "general/pch.h"
+
+#include "Window.h"
 
 ae::Mouse::Mouse(Window *pWindow)
     : m_pWindow(pWindow), m_DeltaX(0.0f), m_DeltaY(0.0f), m_ScrollX(0.0f), m_ScrollY(0.0f), m_Entered(false)

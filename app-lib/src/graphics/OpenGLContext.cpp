@@ -1,6 +1,7 @@
+#include "general/pch.h"
+
 #include "OpenGLContext.h"
 #include "OpenGLManager.h"
-#include "general/pch.h"
 #include "window/WindowManager.h"
 
 ae::OpenGLContext::OpenGLContext(Window &window) : Context(window) {}

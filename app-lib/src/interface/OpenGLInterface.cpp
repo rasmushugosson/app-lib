@@ -1,7 +1,8 @@
+#include "general/pch.h"
+
 #include "OpenGLInterface.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
-#include "general/pch.h"
 
 ae::OpenGLInterface::OpenGLInterface(Window &window) : Interface(window) {}
 

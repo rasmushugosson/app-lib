@@ -1,7 +1,8 @@
+#include "general/pch.h"
+
 #include "OpenAL.h"
 #include "OpenGL.h"
 #include "Vulkan.h"
-#include "general/pch.h"
 
 #ifndef AE_DIST
 
