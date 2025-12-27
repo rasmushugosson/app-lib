@@ -42,18 +42,9 @@ struct WindowDesc
     {
     }
 
-    constexpr WindowDesc(std::string_view title, uint32_t width, uint32_t height, bool resizable, bool minimizable,
-                         bool minimized, bool maximizable, bool maximized, bool fullscreen, uint8_t monitor, bool vsync,
-                         uint32_t fps, GraphicsAPI graphicsAPI)
-        : title(title), width(width), height(height), resizable(resizable), minimizable(minimizable),
-          minimized(minimized), maximizable(maximizable), maximized(maximized), fullscreen(fullscreen),
-          monitor(monitor), vsync(vsync), fps(fps), graphicsAPI(graphicsAPI)
-    {
-    }
-
-    constexpr WindowDesc(const std::string &title, uint32_t width, uint32_t height, bool resizable, bool minimizable,
-                         bool minimized, bool maximizable, bool maximized, bool fullscreen, uint8_t monitor, bool vsync,
-                         uint32_t fps, GraphicsAPI graphicsAPI)
+    WindowDesc(std::string_view title, uint32_t width, uint32_t height, bool resizable, bool minimizable,
+               bool minimized, bool maximizable, bool maximized, bool fullscreen, uint8_t monitor, bool vsync,
+               uint32_t fps, GraphicsAPI graphicsAPI)
         : title(title), width(width), height(height), resizable(resizable), minimizable(minimizable),
           minimized(minimized), maximizable(maximizable), maximized(maximized), fullscreen(fullscreen),
           monitor(monitor), vsync(vsync), fps(fps), graphicsAPI(graphicsAPI)
