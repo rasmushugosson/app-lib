@@ -17,8 +17,9 @@
 
 ae::Window::Window(const WindowDesc &desc)
     : m_Desc(desc), m_pParent(nullptr), m_pWindow(nullptr), m_FrameTime(0.0), m_FrameDuration(0.0),
-      m_AverageFrameTime(0.0), m_AverageFrameDuration(0.0), m_Fps(0.0), m_Mouse(this), m_pContext(nullptr),
-      m_ClearColor{ 1.0f, 0.0f, 1.0f, 1.0f }, m_pInterface(nullptr), m_Focused(false), m_Active(false), m_Created(false)
+      m_AverageFrameTime(0.0), m_AverageFrameDuration(0.0), m_Fps(0.0), m_FrameTimeSum(0.0), m_FrameDurationSum(0.0),
+      m_FrameCount(0), m_Mouse(this), m_pContext(nullptr), m_ClearColor{ 1.0f, 0.0f, 1.0f, 1.0f },
+      m_pInterface(nullptr), m_Focused(false), m_Active(false), m_Created(false)
 {
 #ifndef AE_VULKAN
     if (desc.graphicsAPI == ae::GraphicsAPI::VULKAN)
@@ -31,8 +32,9 @@ ae::Window::Window(const WindowDesc &desc)
 
 ae::Window::Window(const WindowDesc &desc, Window &parent)
     : m_Desc(desc), m_pParent(&parent), m_pWindow(nullptr), m_FrameTime(0.0), m_FrameDuration(0.0),
-      m_AverageFrameTime(0.0), m_AverageFrameDuration(0.0), m_Fps(0.0), m_Mouse(this), m_pContext(nullptr),
-      m_ClearColor{ 1.0f, 0.0f, 1.0f, 1.0f }, m_pInterface(nullptr), m_Focused(false), m_Active(false), m_Created(false)
+      m_AverageFrameTime(0.0), m_AverageFrameDuration(0.0), m_Fps(0.0), m_FrameTimeSum(0.0), m_FrameDurationSum(0.0),
+      m_FrameCount(0), m_Mouse(this), m_pContext(nullptr), m_ClearColor{ 1.0f, 0.0f, 1.0f, 1.0f },
+      m_pInterface(nullptr), m_Focused(false), m_Active(false), m_Created(false)
 {
     parent.AddChild(*this);
 
@@ -117,6 +119,7 @@ void ae::Window::Create()
 
         m_Timer.Start();
         m_FrameTimer.Start();
+        m_AverageTimer.Start();
 
         AE_LOG_NEWLINE();
         AE_LOG(AE_INFO, "Window created successfully");
@@ -229,7 +232,7 @@ void ae::Window::Update()
     m_pInterface->Finish();
 
     m_FrameTime = m_FrameTimer.GetElapsedTime();
-    m_AverageFrameTime = (m_AverageFrameTime * 0.99) + (m_FrameTime * 0.01);
+    m_FrameTimeSum += m_FrameTime;
 
     if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
     {
@@ -265,8 +268,22 @@ void ae::Window::Update()
     }
 
     m_FrameDuration = m_FrameTimer.GetElapsedTime();
-    m_AverageFrameDuration = (m_AverageFrameDuration * 0.99) + (m_FrameDuration * 0.01);
-    m_Fps = 1.0 / m_AverageFrameDuration;
+    m_FrameDurationSum += m_FrameDuration;
+    m_FrameCount++;
+
+    if (m_AverageTimer.GetElapsedTime() >= 1.0)
+    {
+        m_AverageFrameTime = m_FrameTimeSum / static_cast<double>(m_FrameCount);
+        m_AverageFrameDuration = m_FrameDurationSum / static_cast<double>(m_FrameCount);
+        m_Fps = 1.0 / m_AverageFrameDuration;
+
+        m_FrameTimeSum = 0.0;
+        m_FrameDurationSum = 0.0;
+        m_FrameCount = 0;
+
+        m_AverageTimer.Reset();
+        m_AverageTimer.Start();
+    }
 
     m_FrameTimer.Reset();
     m_FrameTimer.Start();

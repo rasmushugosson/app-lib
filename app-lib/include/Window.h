@@ -907,6 +907,11 @@ class Window
     double m_AverageFrameDuration;
     double m_Fps;
 
+    ae::Timer m_AverageTimer;
+    double m_FrameTimeSum;
+    double m_FrameDurationSum;
+    uint32_t m_FrameCount;
+
     Keyboard m_Keyboard;
     Mouse m_Mouse;
     std::vector<Controller> m_Controllers;
