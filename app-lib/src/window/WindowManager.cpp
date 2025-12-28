@@ -1,5 +1,6 @@
 #include "general/pch.h"
 
+#include "Log.h"
 #include "window/WindowManager.h"
 
 #include <GLFW/glfw3.h>
@@ -80,21 +81,21 @@ static void GLFWMonitorCallback(GLFWmonitor *pMonitor, int event)
     ae::WindowManager::Get().RecordMonitor(pMonitor, event);
 }
 
-ae::WindowManager::WindowManager()
-{
-    Init();
-}
+ae::WindowManager::WindowManager() : m_Initialized(false) {}
 
 ae::WindowManager::~WindowManager()
 {
-    try
+    if (m_Initialized)
     {
-        Terminate();
-    }
+        try
+        {
+            Terminate();
+        }
 
-    catch (...)
-    {
-        std::fputs("Unexcepted exception thrown in WindowManager destructor", stderr);
+        catch (...)
+        {
+            std::fputs("Unexpected exception thrown in WindowManager destructor", stderr);
+        }
     }
 }
 
@@ -158,17 +159,25 @@ void ae::WindowManager::Init()
 {
     if (!glfwInit())
     {
-        std::fputs("FATAL: Failed to initialize GLFW\n", stderr);
-        std::fputs("FATAL: Terminating application...\n", stderr);
-        exit(EXIT_FAILURE);
+        AE_THROW_RUNTIME_ERROR("Failed to initialize GLFW");
     }
 
     glfwSetErrorCallback(GLFWErrorCallback);
+    m_Initialized = true;
 }
 
 void ae::WindowManager::Terminate()
 {
     glfwTerminate();
+    m_Initialized = false;
+}
+
+void ae::WindowManager::EnsureInitialized()
+{
+    if (!m_Initialized)
+    {
+        Init();
+    }
 }
 
 void ae::WindowManager::RecordKey(GLFWwindow *pWindow, int key, int scancode, int action, int mods)

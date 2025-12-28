@@ -1,5 +1,6 @@
 #include "general/pch.h"
 
+#include "Log.h"
 #include "OpenGL.h"
 #include "Vulkan.h"
 #include "Window.h"
@@ -56,67 +57,85 @@ void ae::Window::Create()
 #ifdef AE_DEBUG
     if (m_Created)
     {
-        AE_LOG(AE_WARNING, "Window already created");
+        AE_LOG(AE_WARNING, "Tried to create Window but it is already created");
         return;
     }
 #endif // AE_DEBUG
 
-    if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
-    {
-        InitOpenGL();
-    }
+    ae::WindowManager::Get().EnsureInitialized();
 
-    else if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
+    try
     {
+        if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
+        {
+            InitOpenGL();
+        }
+
+        else if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
+        {
 #ifdef AE_VULKAN
-        InitVulkan();
+            InitVulkan();
 #else  // AE_VULKAN
-        AE_THROW_RUNTIME_ERROR(AE_VULKAN_NOT_FOUND_MESSAGE);
+            AE_THROW_RUNTIME_ERROR(AE_VULKAN_NOT_FOUND_MESSAGE);
 #endif // AE_VULKAN
-    }
+        }
 
-    glfwWindowHint(GLFW_RESIZABLE, m_Desc.resizable);
-    glfwWindowHint(GLFW_MAXIMIZED, m_Desc.maximized);
-    glfwWindowHint(GLFW_VISIBLE, !m_Desc.minimized);
+        glfwWindowHint(GLFW_RESIZABLE, m_Desc.resizable);
+        glfwWindowHint(GLFW_MAXIMIZED, m_Desc.maximized);
+        glfwWindowHint(GLFW_VISIBLE, !m_Desc.minimized);
 
-    if (m_Desc.fullscreen)
-    {
-        CreateFullscreen();
-    }
+        if (m_Desc.fullscreen)
+        {
+            CreateFullscreen();
+        }
 
-    else
-    {
-        CreateWindowed();
-    }
+        else
+        {
+            CreateWindowed();
+        }
 
-    if (!m_pWindow)
-    {
-        AE_THROW_RUNTIME_ERROR("Failed to create window");
-    }
+        if (!m_pWindow)
+        {
+            AE_THROW_RUNTIME_ERROR("Failed to create window");
+        }
 
-    if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
-    {
-        CreateOpenGL();
-    }
+        if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
+        {
+            CreateOpenGL();
+        }
 
-    else if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
-    {
+        else if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
+        {
 #ifdef AE_VULKAN
-        CreateVulkan();
+            CreateVulkan();
 #else  // AE_VULKAN
-        AE_THROW_RUNTIME_ERROR(AE_VULKAN_NOT_FOUND_MESSAGE);
+            AE_THROW_RUNTIME_ERROR(AE_VULKAN_NOT_FOUND_MESSAGE);
 #endif // AE_VULKAN
+        }
+
+        ae::WindowManager::Get().AddWindow(this);
+
+        m_Timer.Start();
+        m_FrameTimer.Start();
+
+        AE_LOG_NEWLINE();
+        AE_LOG(AE_INFO, "Window created successfully");
+
+        m_Created = true;
+        return;
     }
 
-    ae::WindowManager::Get().AddWindow(this);
+    catch (const std::exception &e)
+    {
+        AE_LOG(AE_ERROR, "{}", e.what());
+    }
 
-    m_Timer.Start();
-    m_FrameTimer.Start();
+    catch (...)
+    {
+        AE_LOG(AE_ERROR, "Unexpected error thrown in Window::Create");
+    }
 
-    AE_LOG_NEWLINE();
-    AE_LOG(AE_INFO, "Window created successfully");
-
-    m_Created = true;
+    AE_THROW_RUNTIME_ERROR("Failed to create Window");
 }
 
 void ae::Window::Destroy()
@@ -144,6 +163,10 @@ void ae::Window::Destroy()
     }
 
     ae::WindowManager::Get().RemoveWindow(this);
+
+    ResetCursor();
+    ResetIconSet();
+
     glfwDestroyWindow(m_pWindow);
 
     AE_LOG_NEWLINE();

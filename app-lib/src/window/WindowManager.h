@@ -47,13 +47,15 @@ class WindowManager
 
     void DeactivateAllWindows();
 
+    void EnsureInitialized();
+
   private:
     void Init();
     void Terminate();
 
   private:
+    bool m_Initialized;
     std::vector<Window *> m_Windows;
     std::unordered_map<GLFWwindow *, uint32_t> m_WindowMap;
-
 };
 } // namespace ae
