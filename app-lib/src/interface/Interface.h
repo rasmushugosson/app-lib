@@ -44,6 +44,7 @@ namespace ae
 		void SendOnMonitorEvent(GLFWmonitor* pMonitor, int event) const;
 
 		inline void SetOnInterfaceUpdateCB(const std::function<void()>& cb) { m_OnInterfaceUpdate = cb; }
+		inline bool HasCallback() const { return static_cast<bool>(m_OnInterfaceUpdate); }
 	protected:
 		virtual bool CreateImpl() = 0;
 		virtual void DestroyImpl() = 0;

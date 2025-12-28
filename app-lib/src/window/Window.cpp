@@ -227,9 +227,12 @@ void ae::Window::Update()
 
     glfwPollEvents();
 
-    m_pInterface->Prepare();
-    m_pInterface->Update();
-    m_pInterface->Finish();
+    if (m_pInterface->HasCallback())
+    {
+        m_pInterface->Prepare();
+        m_pInterface->Update();
+        m_pInterface->Finish();
+    }
 
     m_FrameTime = m_FrameTimer.GetElapsedTime();
     m_FrameTimeSum += m_FrameTime;
