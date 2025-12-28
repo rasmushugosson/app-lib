@@ -21,7 +21,8 @@ class WindowManager
 
     inline static WindowManager &Get()
     {
-        return m_Instance;
+        static WindowManager instance;
+        return instance;
     }
 
     void AddWindow(Window *window);
@@ -54,6 +55,5 @@ class WindowManager
     std::vector<Window *> m_Windows;
     std::unordered_map<GLFWwindow *, uint32_t> m_WindowMap;
 
-    static WindowManager m_Instance;
 };
 } // namespace ae

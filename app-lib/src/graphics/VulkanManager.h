@@ -17,7 +17,8 @@ namespace ae
 
 		static inline VulkanManager& Get()
 		{
-			return m_Instance;
+			static VulkanManager instance;
+			return instance;
 		}
 
 		void AddContext(const std::string& name);
@@ -83,8 +84,6 @@ namespace ae
 #endif // AE_DEBUG
 
 		static constexpr std::array<const char*, 1> s_DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-	private:
-		static VulkanManager m_Instance;
 	};
 }
 

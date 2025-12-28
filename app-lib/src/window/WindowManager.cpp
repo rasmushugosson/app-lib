@@ -80,8 +80,6 @@ static void GLFWMonitorCallback(GLFWmonitor *pMonitor, int event)
     ae::WindowManager::Get().RecordMonitor(pMonitor, event);
 }
 
-ae::WindowManager ae::WindowManager::m_Instance;
-
 ae::WindowManager::WindowManager()
 {
     Init();
@@ -160,14 +158,12 @@ void ae::WindowManager::Init()
 {
     if (!glfwInit())
     {
-        AE_LOG(AE_FATAL, "Failed to initialize GLFW");
-        AE_LOG(AE_FATAL, "Terminating application...");
+        std::fputs("FATAL: Failed to initialize GLFW\n", stderr);
+        std::fputs("FATAL: Terminating application...\n", stderr);
         exit(EXIT_FAILURE);
     }
 
     glfwSetErrorCallback(GLFWErrorCallback);
-
-    AE_LOG(AE_INFO, "GLFW initialized");
 }
 
 void ae::WindowManager::Terminate()

@@ -15,7 +15,8 @@ namespace ae
 
 		static inline OpenGLManager& Get()
 		{
-			return m_Instance;
+			static OpenGLManager instance;
+			return instance;
 		}
 
 		void AddContext();
@@ -31,7 +32,5 @@ namespace ae
 		std::string m_Version;
 		std::string m_Renderer;
 		std::string m_Vendor;
-	private:
-		static OpenGLManager m_Instance;
 	};
 }

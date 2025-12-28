@@ -8,8 +8,6 @@
 #include <algorithm>
 #include <utility>
 
-ae::VulkanManager ae::VulkanManager::m_Instance;
-
 ae::VulkanManager::VulkanManager()
     : m_ContextCount(0), m_Version("None"), m_Renderer("None"), m_Vendor("None"), m_VulkanInstance(VK_NULL_HANDLE),
       m_PhysicalDevice(VK_NULL_HANDLE), m_Device(VK_NULL_HANDLE), m_GraphicsQueue(VK_NULL_HANDLE),
