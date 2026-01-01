@@ -86,14 +86,19 @@ void ae::Window::Create()
         glfwWindowHint(GLFW_MAXIMIZED, m_Desc.maximized);
         glfwWindowHint(GLFW_VISIBLE, !m_Desc.minimized);
 
-        if (m_Desc.fullscreen)
+        if (m_Desc.type == WindowType::WINDOWED)
+        {
+            CreateWindowed();
+        }
+
+        else if (m_Desc.type == WindowType::FULLSCREEN)
         {
             CreateFullscreen();
         }
 
         else
         {
-            CreateWindowed();
+            CreateHeadless();
         }
 
         if (!m_pWindow)
@@ -225,30 +230,36 @@ void ae::Window::Update()
     }
 #endif // AE_DEBUG
 
-    glfwPollEvents();
-
-    if (m_pInterface->HasCallback())
+    if (m_Desc.type != WindowType::HEADLESS)
     {
-        m_pInterface->Prepare();
-        m_pInterface->Update();
-        m_pInterface->Finish();
+        glfwPollEvents();
+
+        if (m_pInterface->HasCallback())
+        {
+            m_pInterface->Prepare();
+            m_pInterface->Update();
+            m_pInterface->Finish();
+        }
     }
 
     m_FrameTime = m_FrameTimer.GetElapsedTime();
     m_FrameTimeSum += m_FrameTime;
 
-    if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
+    if (m_Desc.type != WindowType::HEADLESS)
     {
-        UpdateOpenGL();
-    }
+        if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
+        {
+            UpdateOpenGL();
+        }
 
-    else if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
-    {
+        else if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
+        {
 #ifdef AE_VULKAN
-        UpdateVulkan();
+            UpdateVulkan();
 #else  // AE_VULKAN
-        AE_THROW_RUNTIME_ERROR(AE_VULKAN_NOT_FOUND_MESSAGE);
+            AE_THROW_RUNTIME_ERROR(AE_VULKAN_NOT_FOUND_MESSAGE);
 #endif // AE_VULKAN
+        }
     }
 
     if (!m_Desc.vsync)
@@ -341,8 +352,13 @@ void ae::Window::SetTitle(const std::string &title)
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING, "Tried to set window title but it is not created");
+        AE_LOG(AE_WARNING, "Tried to set Window title but it is not created");
         return;
+    }
+
+    if (m_Desc.type == WindowType::HEADLESS)
+    {
+        AE_LOG(AE_WARNING, "Tried to set Window title but this is not applicable to headless windows");
     }
 #endif // AE_DEBUG
     glfwSetWindowTitle(m_pWindow, title.c_str());
@@ -353,8 +369,13 @@ void ae::Window::SetIconSet(const IconSet &iconSet)
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING, "Tried to set window icon but it is not created");
+        AE_LOG(AE_WARNING, "Tried to set Window icon but it is not created");
         return;
+    }
+
+    if (m_Desc.type == WindowType::HEADLESS)
+    {
+        AE_LOG(AE_WARNING, "Tried to set Window icon but this is not applicable to headless windows");
     }
 #endif // AE_DEBUG
     m_IconSet = iconSet;
@@ -375,6 +396,11 @@ void ae::Window::ResetIconSet()
         AE_LOG(AE_WARNING, "Tried to reset window icon but it is not created");
         return;
     }
+
+    if (m_Desc.type == WindowType::HEADLESS)
+    {
+        AE_LOG(AE_WARNING, "Tried to reset Window icon but this is not applicable to headless windows");
+    }
 #endif // AE_DEBUG
     m_IconSet = IconSet();
 
@@ -392,6 +418,11 @@ void ae::Window::SetCursor(const Cursor &cursor)
         AE_LOG(AE_WARNING, "Tried to set window cursor but it is not created");
         return;
     }
+
+    if (m_Desc.type == WindowType::HEADLESS)
+    {
+        AE_LOG(AE_WARNING, "Tried to set Window cursor but this is not applicable to headless windows");
+    }
 #endif // AE_DEBUG
     m_CurrentCursor = cursor;
 
@@ -405,6 +436,11 @@ void ae::Window::ResetCursor()
     {
         AE_LOG(AE_WARNING, "Tried to reset window cursor but it is not created");
         return;
+    }
+
+    if (m_Desc.type == WindowType::HEADLESS)
+    {
+        AE_LOG(AE_WARNING, "Tried to reset Window cursor but this is not applicable to headless windows");
     }
 #endif // AE_DEBUG
     m_CurrentCursor = Cursor();
@@ -432,6 +468,13 @@ void ae::Window::SetOnInterfaceUpdateCB(const std::function<void()> &cb)
         AE_LOG(AE_WARNING, "Tried to set interface update callback but the Window is not created");
         return;
     }
+
+    if (m_Desc.type == WindowType::HEADLESS)
+    {
+        AE_LOG(AE_WARNING, "Tried to set interface update callback but this is not applicable to headless windows");
+        return;
+    }
+
     if (!m_pInterface)
     {
         AE_LOG(AE_WARNING, "Tried to set interface update callback but the Interface for the Window is not created");
@@ -503,6 +546,7 @@ void ae::Window::CreateWindowed()
         pShare = m_pParent->m_pWindow;
     }
 
+    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
     m_pWindow = glfwCreateWindow(static_cast<int>(m_Desc.width), static_cast<int>(m_Desc.height), m_Desc.title.c_str(),
                                  nullptr, pShare);
 
@@ -528,8 +572,23 @@ void ae::Window::CreateFullscreen()
         pShare = m_pParent->m_pWindow;
     }
 
+    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
     m_pWindow = glfwCreateWindow(static_cast<int>(m_Desc.width), static_cast<int>(m_Desc.height), m_Desc.title.c_str(),
                                  pMonitor, pShare);
+}
+
+void ae::Window::CreateHeadless()
+{
+    GLFWwindow *pShare = nullptr;
+
+    if (m_pParent)
+    {
+        pShare = m_pParent->m_pWindow;
+    }
+
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    m_pWindow = glfwCreateWindow(static_cast<int>(m_Desc.width), static_cast<int>(m_Desc.height), m_Desc.title.c_str(),
+                                 nullptr, pShare);
 }
 
 void ae::Window::InitOpenGL()
@@ -563,7 +622,15 @@ void ae::Window::CreateOpenGL()
         m_AverageFrameTime = 1.0 / static_cast<double>(m_Desc.fps);
         m_AverageFrameDuration = 1.0 / static_cast<double>(m_Desc.fps);
 
-        glfwSwapInterval(1);
+        if (m_Desc.type != WindowType::HEADLESS)
+        {
+            glfwSwapInterval(1);
+        }
+
+        else
+        {
+            m_Desc.vsync = false;
+        }
     }
 
     else
@@ -577,11 +644,17 @@ void ae::Window::CreateOpenGL()
             m_AverageFrameDuration = 1.0 / 60.0;
         }
 
-        glfwSwapInterval(0);
+        if (m_Desc.type != WindowType::HEADLESS)
+        {
+            glfwSwapInterval(0);
+        }
     }
 
-    m_pInterface = std::make_unique<ae::OpenGLInterface>(*this);
-    m_pInterface->Create();
+    if (m_Desc.type != WindowType::HEADLESS)
+    {
+        m_pInterface = std::make_unique<ae::OpenGLInterface>(*this);
+        m_pInterface->Create();
+    }
 }
 
 #ifdef AE_VULKAN
@@ -615,8 +688,11 @@ void ae::Window::CreateVulkan()
     m_AverageFrameTime = 1.0 / static_cast<double>(m_Desc.fps);
     m_AverageFrameDuration = 1.0 / static_cast<double>(m_Desc.fps);
 
-    m_pInterface = std::make_unique<ae::VulkanInterface>(*this);
-    m_pInterface->Create();
+    if (m_Desc.type != WindowType::HEADLESS)
+    {
+        m_pInterface = std::make_unique<ae::VulkanInterface>(*this);
+        m_pInterface->Create();
+    }
 }
 #endif // AE_VULKAN
 
@@ -643,7 +719,10 @@ void ae::Window::UpdateVulkan()
 
 void ae::Window::DestroyOpenGL()
 {
-    m_pInterface->Destroy();
+    if (m_Desc.type != WindowType::HEADLESS)
+    {
+        m_pInterface->Destroy();
+    }
 
     m_pContext->Destroy();
 }
@@ -651,7 +730,10 @@ void ae::Window::DestroyOpenGL()
 #ifdef AE_VULKAN
 void ae::Window::DestroyVulkan()
 {
-    m_pInterface->Destroy();
+    if (m_Desc.type != WindowType::HEADLESS)
+    {
+        m_pInterface->Destroy();
+    }
 
     m_pContext->Destroy();
 }
@@ -843,7 +925,10 @@ void ae::Window::OnWindowFocused(int focused)
 
 void ae::Window::OnMonitor(GLFWmonitor *pMonitor, int event)
 {
-    m_pInterface->SendOnMonitorEvent(pMonitor, event);
+    if (m_Desc.type != WindowType::HEADLESS)
+    {
+        m_pInterface->SendOnMonitorEvent(pMonitor, event);
+    }
 
     if (m_OnMonitorConnected)
     {

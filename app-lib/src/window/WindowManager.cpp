@@ -104,38 +104,44 @@ void ae::WindowManager::AddWindow(Window *window)
     m_WindowMap[window->GetWindow()] = static_cast<uint32_t>(m_Windows.size());
     m_Windows.push_back(window);
 
-    glfwSetKeyCallback(window->GetWindow(), GLFWKeyCallback);
+    if (window->GetDesc().type != WindowType::HEADLESS)
+    {
+        glfwSetKeyCallback(window->GetWindow(), GLFWKeyCallback);
 
-    glfwSetMouseButtonCallback(window->GetWindow(), GLFWMouseButtonCallback);
-    glfwSetCursorPosCallback(window->GetWindow(), GLFWMouseMovedCallback);
-    glfwSetScrollCallback(window->GetWindow(), GLFWMouseScrolledCallback);
-    glfwSetCursorEnterCallback(window->GetWindow(), GLFWCursorEnterCallback);
+        glfwSetMouseButtonCallback(window->GetWindow(), GLFWMouseButtonCallback);
+        glfwSetCursorPosCallback(window->GetWindow(), GLFWMouseMovedCallback);
+        glfwSetScrollCallback(window->GetWindow(), GLFWMouseScrolledCallback);
+        glfwSetCursorEnterCallback(window->GetWindow(), GLFWCursorEnterCallback);
 
-    glfwSetWindowSizeCallback(window->GetWindow(), GLFWWindowSizeCallback);
-    glfwSetWindowIconifyCallback(window->GetWindow(), GLFWWindowMinimalizeCallback);
-    glfwSetWindowMaximizeCallback(window->GetWindow(), GLFWWindowMaximalizeCallback);
-    glfwSetWindowPosCallback(window->GetWindow(), GLFWWindowMoveCallback);
-    glfwSetWindowFocusCallback(window->GetWindow(), GLFWWindowFocusCallback);
+        glfwSetWindowSizeCallback(window->GetWindow(), GLFWWindowSizeCallback);
+        glfwSetWindowIconifyCallback(window->GetWindow(), GLFWWindowMinimalizeCallback);
+        glfwSetWindowMaximizeCallback(window->GetWindow(), GLFWWindowMaximalizeCallback);
+        glfwSetWindowPosCallback(window->GetWindow(), GLFWWindowMoveCallback);
+        glfwSetWindowFocusCallback(window->GetWindow(), GLFWWindowFocusCallback);
 
-    glfwSetMonitorCallback(GLFWMonitorCallback);
+        glfwSetMonitorCallback(GLFWMonitorCallback);
+    }
 
     AE_LOG(AE_TRACE, "Window added to manager");
 }
 
 void ae::WindowManager::RemoveWindow(Window *window)
 {
-    glfwSetKeyCallback(window->GetWindow(), nullptr);
+    if (window->GetDesc().type != WindowType::HEADLESS)
+    {
+        glfwSetKeyCallback(window->GetWindow(), nullptr);
 
-    glfwSetMouseButtonCallback(window->GetWindow(), nullptr);
-    glfwSetCursorPosCallback(window->GetWindow(), nullptr);
-    glfwSetScrollCallback(window->GetWindow(), nullptr);
-    glfwSetCursorEnterCallback(window->GetWindow(), nullptr);
+        glfwSetMouseButtonCallback(window->GetWindow(), nullptr);
+        glfwSetCursorPosCallback(window->GetWindow(), nullptr);
+        glfwSetScrollCallback(window->GetWindow(), nullptr);
+        glfwSetCursorEnterCallback(window->GetWindow(), nullptr);
 
-    glfwSetWindowSizeCallback(window->GetWindow(), nullptr);
-    glfwSetWindowIconifyCallback(window->GetWindow(), nullptr);
-    glfwSetWindowMaximizeCallback(window->GetWindow(), nullptr);
-    glfwSetWindowPosCallback(window->GetWindow(), nullptr);
-    glfwSetWindowFocusCallback(window->GetWindow(), nullptr);
+        glfwSetWindowSizeCallback(window->GetWindow(), nullptr);
+        glfwSetWindowIconifyCallback(window->GetWindow(), nullptr);
+        glfwSetWindowMaximizeCallback(window->GetWindow(), nullptr);
+        glfwSetWindowPosCallback(window->GetWindow(), nullptr);
+        glfwSetWindowFocusCallback(window->GetWindow(), nullptr);
+    }
 
     uint32_t index = m_WindowMap[window->GetWindow()];
 

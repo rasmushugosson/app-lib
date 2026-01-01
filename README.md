@@ -120,6 +120,13 @@ The `Window` class is defined in the `Window.h` header file and is located in th
 To specify the properties of the created window, the `WindowDesc` struct is passed to the `Window` constructor:
 
 ```cpp
+enum class WindowType
+{
+    WINDOWED = 0,
+    FULLSCREEN,
+    HEADLESS
+};
+
 enum class GraphicsAPI
 {
     OPENGL = 0,
@@ -136,10 +143,10 @@ struct WindowDesc
     bool minimized;          // Whether the window is minimized
     bool maximizable;        // Whether the window can be maximized
     bool maximized;          // Whether the window is maximized
-    bool fullscreen;         // Whether the window is fullscreen
     uint8_t monitor;         // The monitor on which the window should be displayed
     bool vsync;              // Whether vsync is enabled
     uint32_t fps;            // The target frames per second if vsync is disabled
+    WindowType type;         // The type of graphics app should be created
     GraphicsAPI graphicsAPI; // The graphics API to create a context for
 };
 ```

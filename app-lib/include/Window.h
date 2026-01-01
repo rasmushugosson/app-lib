@@ -13,6 +13,14 @@
 
 namespace ae
 {
+
+enum class WindowType : uint8_t
+{
+    WINDOWED = 0,
+    FULLSCREEN,
+    HEADLESS
+};
+
 enum class GraphicsAPI : uint8_t
 {
     OPENGL = 0,
@@ -29,25 +37,33 @@ struct WindowDesc
     bool minimized;
     bool maximizable;
     bool maximized;
-    bool fullscreen;
     uint8_t monitor;
     bool vsync;
     uint32_t fps;
+    WindowType type;
     GraphicsAPI graphicsAPI;
 
     constexpr WindowDesc()
         : title("Untitled"), width(1280), height(720), resizable(true), minimizable(true), minimized(false),
-          maximizable(true), maximized(false), fullscreen(false), monitor(0), vsync(true), fps(60),
+          maximizable(true), maximized(false), monitor(0), vsync(true), fps(60), type(WindowType::WINDOWED),
           graphicsAPI(GraphicsAPI::OPENGL)
     {
     }
 
     WindowDesc(std::string_view title, uint32_t width, uint32_t height, bool resizable, bool minimizable,
-               bool minimized, bool maximizable, bool maximized, bool fullscreen, uint8_t monitor, bool vsync,
-               uint32_t fps, GraphicsAPI graphicsAPI)
+               bool minimized, bool maximizable, bool maximized, uint8_t monitor, bool vsync, uint32_t fps,
+               WindowType type, GraphicsAPI graphicsAPI)
         : title(title), width(width), height(height), resizable(resizable), minimizable(minimizable),
-          minimized(minimized), maximizable(maximizable), maximized(maximized), fullscreen(fullscreen),
-          monitor(monitor), vsync(vsync), fps(fps), graphicsAPI(graphicsAPI)
+          minimized(minimized), maximizable(maximizable), maximized(maximized), monitor(monitor), vsync(vsync),
+          fps(fps), type(type), graphicsAPI(graphicsAPI)
+    {
+    }
+
+    WindowDesc(std::string_view title, uint32_t width, uint32_t height, uint8_t monitor, bool vsync, uint32_t fps,
+               WindowType type, GraphicsAPI graphicsAPI)
+        : title(title), width(width), height(height), resizable(false), minimizable(false), minimized(false),
+          maximizable(false), maximized(false), monitor(monitor), vsync(vsync), fps(fps), type(type),
+          graphicsAPI(graphicsAPI)
     {
     }
 };
@@ -685,26 +701,32 @@ class Window
     {
         return m_Keyboard;
     }
+
     inline Keyboard &GetKeyboard()
     {
         return m_Keyboard;
     }
+
     inline const Mouse &GetMouse() const
     {
         return m_Mouse;
     }
+
     inline Mouse &GetMouse()
     {
         return m_Mouse;
     }
+
     inline const Controller &GetController(uint32_t index) const
     {
         return m_Controllers[index];
     }
+
     inline Controller &GetController(uint32_t index)
     {
         return m_Controllers[index];
     }
+
     inline const std::vector<Controller> &GetControllers() const
     {
         return m_Controllers;
@@ -719,6 +741,7 @@ class Window
     {
         return m_Desc.width;
     }
+
     inline uint32_t GetHeight() const
     {
         return m_Desc.height;
@@ -728,18 +751,22 @@ class Window
     {
         return m_FrameTime;
     }
+
     inline double GetFrameDuration() const
     {
         return m_FrameDuration;
     }
+
     inline double GetAverageFrameTime() const
     {
         return m_AverageFrameTime;
     }
+
     inline double GetAverageFrameDuration() const
     {
         return m_AverageFrameDuration;
     }
+
     inline double GetFps() const
     {
         return m_Fps;
@@ -763,6 +790,7 @@ class Window
     {
         return m_ClearColor;
     }
+
     inline void SetClearColor(float r, float g, float b, float a)
     {
         m_ClearColor[0] = r;
@@ -770,6 +798,7 @@ class Window
         m_ClearColor[2] = b;
         m_ClearColor[3] = a;
     }
+
     inline void SetClearColor(const std::array<float, 4> color)
     {
         m_ClearColor[0] = color[0];
@@ -780,64 +809,168 @@ class Window
 
     inline void SetOnKeyPressedCB(const std::function<void(char)> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set key pressed callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnKeyPressed = cb;
     }
+
     inline void SetOnKeyReleasedCB(const std::function<void(char)> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set key released callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnKeyReleased = cb;
     }
+
     inline void SetOnKeyTypedCB(const std::function<void(char)> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set key typed callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnKeyTyped = cb;
     }
 
     inline void SetOnMouseButtonPressedCB(const std::function<void(int32_t)> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING,
+                   "Tried to set mouse button pressed callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnMouseButtonPressed = cb;
     }
+
     inline void SetOnMouseButtonReleasedCB(const std::function<void(int32_t)> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING,
+                   "Tried to set mouse button released callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnMouseButtonReleased = cb;
     }
+
     inline void SetOnMouseMovedCB(const std::function<void(float, float)> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set mouse moved callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnMouseMoved = cb;
     }
+
     inline void SetOnMouseScrolledCB(const std::function<void(float, float)> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set mouse scrolled callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnMouseScrolled = cb;
     }
+
     inline void SetOnMouseEnteredCB(const std::function<void()> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set mouse entered callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnMouseEntered = cb;
     }
+
     inline void SetOnMouseExitedCB(const std::function<void()> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set mouse exited callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnMouseExited = cb;
     }
 
     inline void SetOnWindowResizeCB(const std::function<void(uint32_t, uint32_t)> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set window resize callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnWindowResize = cb;
     }
+
     inline void SetOnWindowMinimizedCB(const std::function<void()> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set window minimized callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnWindowMinimized = cb;
     }
+
     inline void SetOnWindowMaximizedCB(const std::function<void()> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set window maximized callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnWindowMaximized = cb;
     }
+
     inline void SetOnWindowRestoredCB(const std::function<void()> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set window restored callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnWindowRestored = cb;
     }
+
     inline void SetOnWindowMovedCB(const std::function<void(uint32_t, uint32_t)> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set window moved callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnWindowMoved = cb;
     }
+
     inline void SetOnWindowFocusedCB(const std::function<void(bool)> &cb)
     {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set window focused callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
         m_OnWindowFocused = cb;
     }
 
@@ -851,6 +984,7 @@ class Window
 
     void CreateWindowed();
     void CreateFullscreen();
+    void CreateHeadless();
 
     void InitOpenGL();
 #ifdef AE_VULKAN
