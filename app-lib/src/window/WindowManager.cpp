@@ -81,6 +81,39 @@ static void GLFWMonitorCallback(GLFWmonitor *pMonitor, int event)
     ae::WindowManager::Get().RecordMonitor(pMonitor, event);
 }
 
+static void GLFWFramebufferSizeCallback(GLFWwindow *pWindow, int width, int height)
+{
+    ae::WindowManager::Get().RecordFramebufferResize(pWindow, static_cast<uint32_t>(width),
+                                                     static_cast<uint32_t>(height));
+}
+
+static void GLFWContentScaleCallback(GLFWwindow *pWindow, float xScale, float yScale)
+{
+    ae::WindowManager::Get().RecordContentScaleChanged(pWindow, xScale, yScale);
+}
+
+static void GLFWDropCallback(GLFWwindow *pWindow, int count, const char **paths)
+{
+    ae::WindowManager::Get().RecordFileDrop(pWindow, count, paths);
+}
+
+static void GLFWWindowCloseCallback(GLFWwindow *pWindow)
+{
+    ae::WindowManager::Get().RecordWindowClose(pWindow);
+}
+
+static void GLFWJoystickCallback(int jid, int event)
+{
+    if (event == GLFW_CONNECTED)
+    {
+        ae::WindowManager::Get().RecordControllerConnected(jid);
+    }
+    else if (event == GLFW_DISCONNECTED)
+    {
+        ae::WindowManager::Get().RecordControllerDisconnected(jid);
+    }
+}
+
 ae::WindowManager::WindowManager() : m_Initialized(false) {}
 
 ae::WindowManager::~WindowManager()
@@ -119,7 +152,13 @@ void ae::WindowManager::AddWindow(Window *window)
         glfwSetWindowPosCallback(window->GetWindow(), GLFWWindowMoveCallback);
         glfwSetWindowFocusCallback(window->GetWindow(), GLFWWindowFocusCallback);
 
+        glfwSetFramebufferSizeCallback(window->GetWindow(), GLFWFramebufferSizeCallback);
+        glfwSetWindowContentScaleCallback(window->GetWindow(), GLFWContentScaleCallback);
+        glfwSetDropCallback(window->GetWindow(), GLFWDropCallback);
+        glfwSetWindowCloseCallback(window->GetWindow(), GLFWWindowCloseCallback);
+
         glfwSetMonitorCallback(GLFWMonitorCallback);
+        glfwSetJoystickCallback(GLFWJoystickCallback);
     }
 
     AE_LOG(AE_TRACE, "Window added to manager");
@@ -141,6 +180,11 @@ void ae::WindowManager::RemoveWindow(Window *window)
         glfwSetWindowMaximizeCallback(window->GetWindow(), nullptr);
         glfwSetWindowPosCallback(window->GetWindow(), nullptr);
         glfwSetWindowFocusCallback(window->GetWindow(), nullptr);
+
+        glfwSetFramebufferSizeCallback(window->GetWindow(), nullptr);
+        glfwSetWindowContentScaleCallback(window->GetWindow(), nullptr);
+        glfwSetDropCallback(window->GetWindow(), nullptr);
+        glfwSetWindowCloseCallback(window->GetWindow(), nullptr);
     }
 
     uint32_t index = m_WindowMap[window->GetWindow()];
@@ -323,6 +367,70 @@ void ae::WindowManager::RecordMonitor(GLFWmonitor *pMonitor, int event)
     for (Window *pWindow : m_Windows)
     {
         pWindow->OnMonitor(pMonitor, event);
+    }
+}
+
+void ae::WindowManager::RecordFramebufferResize(GLFWwindow *pWindow, uint32_t width, uint32_t height)
+{
+#ifdef AE_DEBUG
+    if (!m_WindowMap.contains(pWindow))
+    {
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
+        return;
+    }
+#endif // AE_DEBUG
+    m_Windows[m_WindowMap[pWindow]]->OnFramebufferResize(width, height);
+}
+
+void ae::WindowManager::RecordContentScaleChanged(GLFWwindow *pWindow, float xScale, float yScale)
+{
+#ifdef AE_DEBUG
+    if (!m_WindowMap.contains(pWindow))
+    {
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
+        return;
+    }
+#endif // AE_DEBUG
+    m_Windows[m_WindowMap[pWindow]]->OnContentScaleChanged(xScale, yScale);
+}
+
+void ae::WindowManager::RecordFileDrop(GLFWwindow *pWindow, int count, const char **paths)
+{
+#ifdef AE_DEBUG
+    if (!m_WindowMap.contains(pWindow))
+    {
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
+        return;
+    }
+#endif // AE_DEBUG
+    m_Windows[m_WindowMap[pWindow]]->OnFileDrop(count, paths);
+}
+
+void ae::WindowManager::RecordWindowClose(GLFWwindow *pWindow)
+{
+#ifdef AE_DEBUG
+    if (!m_WindowMap.contains(pWindow))
+    {
+        AE_LOG(AE_WARNING, "Tried to record event but Window was not found in WindowManager");
+        return;
+    }
+#endif // AE_DEBUG
+    m_Windows[m_WindowMap[pWindow]]->OnWindowClose();
+}
+
+void ae::WindowManager::RecordControllerConnected(int controllerId)
+{
+    for (Window *pWindow : m_Windows)
+    {
+        pWindow->OnControllerConnected(controllerId);
+    }
+}
+
+void ae::WindowManager::RecordControllerDisconnected(int controllerId)
+{
+    for (Window *pWindow : m_Windows)
+    {
+        pWindow->OnControllerDisconnected(controllerId);
     }
 }
 

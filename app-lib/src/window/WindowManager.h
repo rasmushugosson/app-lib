@@ -45,6 +45,13 @@ class WindowManager
 
     void RecordMonitor(GLFWmonitor *pMonitor, int event);
 
+    void RecordFramebufferResize(GLFWwindow *pWindow, uint32_t width, uint32_t height);
+    void RecordContentScaleChanged(GLFWwindow *pWindow, float xScale, float yScale);
+    void RecordFileDrop(GLFWwindow *pWindow, int count, const char** paths);
+    void RecordWindowClose(GLFWwindow *pWindow);
+    void RecordControllerConnected(int controllerId);
+    void RecordControllerDisconnected(int controllerId);
+
     void DeactivateAllWindows();
 
     void EnsureInitialized();

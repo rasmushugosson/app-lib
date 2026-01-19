@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Event.h"
+#include "Layer.h"
 #include "Log.h"
 
 #include <GL/glew.h>
@@ -324,17 +326,44 @@ class Keyboard
     Keyboard();
     ~Keyboard();
 
-    bool IsKeyPressed(int32_t key) const;
-    bool IsKeyPressed(Key key) const;
+    [[nodiscard]] bool IsKeyPressed(int32_t key) const;
+    [[nodiscard]] bool IsKeyPressed(Key key) const;
+
+    [[nodiscard]] bool WasKeyPressed(int32_t key) const;
+    [[nodiscard]] bool WasKeyPressed(Key key) const;
+    [[nodiscard]] bool WasKeyReleased(int32_t key) const;
+    [[nodiscard]] bool WasKeyReleased(Key key) const;
+
+    [[nodiscard]] inline bool IsShiftPressed() const
+    {
+        return m_Keys[AE_KEYBOARD_LEFT_SHIFT] || m_Keys[AE_KEYBOARD_RIGHT_SHIFT];
+    }
+
+    [[nodiscard]] inline bool IsCtrlPressed() const
+    {
+        return m_Keys[AE_KEYBOARD_LEFT_CONTROL] || m_Keys[AE_KEYBOARD_RIGHT_CONTROL];
+    }
+
+    [[nodiscard]] inline bool IsAltPressed() const
+    {
+        return m_Keys[AE_KEYBOARD_LEFT_ALT] || m_Keys[AE_KEYBOARD_RIGHT_ALT];
+    }
+
+    [[nodiscard]] inline bool IsSuperPressed() const
+    {
+        return m_Keys[AE_KEYBOARD_LEFT_SUPER] || m_Keys[AE_KEYBOARD_RIGHT_SUPER];
+    }
 
     std::string GetTyped();
 
   private:
     void SetKeyPressed(int32_t key, bool pressed);
     void SetKeyTyped(int32_t key);
+    void UpdatePreviousState();
 
   private:
     std::bitset<GLFW_KEY_LAST + 1> m_Keys;
+    std::bitset<GLFW_KEY_LAST + 1> m_PreviousKeys;
     std::ostringstream m_Typed;
 
     friend class Window;
@@ -365,6 +394,12 @@ enum class MouseButton : uint8_t
     BUTTON_8 = AE_MOUSE_BUTTON_8
 };
 
+struct Vec2
+{
+    float x;
+    float y;
+};
+
 class Mouse
 {
   public:
@@ -374,12 +409,17 @@ class Mouse
     [[nodiscard]] bool IsButtonPressed(int32_t button) const;
     [[nodiscard]] bool IsButtonPressed(MouseButton button) const;
 
+    [[nodiscard]] bool WasButtonPressed(int32_t button) const;
+    [[nodiscard]] bool WasButtonPressed(MouseButton button) const;
+    [[nodiscard]] bool WasButtonReleased(int32_t button) const;
+    [[nodiscard]] bool WasButtonReleased(MouseButton button) const;
+
     [[nodiscard]] float GetX() const;
     [[nodiscard]] float GetY() const;
+    [[nodiscard]] Vec2 GetPosition() const;
 
     void SetX(float x);
     void SetY(float y);
-
     void SetPosition(float x, float y);
 
     inline float GetDeltaX()
@@ -387,28 +427,44 @@ class Mouse
         float x = m_DeltaX;
         m_DeltaX = 0.0f;
         return x;
-    };
+    }
 
     inline float GetDeltaY()
     {
         float y = m_DeltaY;
         m_DeltaY = 0.0f;
         return y;
-    };
+    }
+
+    inline Vec2 GetDelta()
+    {
+        Vec2 delta = {m_DeltaX, m_DeltaY};
+        m_DeltaX = 0.0f;
+        m_DeltaY = 0.0f;
+        return delta;
+    }
 
     inline float GetScrollX()
     {
         float x = m_ScrollX;
         m_ScrollX = 0.0f;
         return x;
-    };
+    }
 
     inline float GetScrollY()
     {
         float y = m_ScrollY;
         m_ScrollY = 0.0f;
         return y;
-    };
+    }
+
+    inline Vec2 GetScroll()
+    {
+        Vec2 scroll = {m_ScrollX, m_ScrollY};
+        m_ScrollX = 0.0f;
+        m_ScrollY = 0.0f;
+        return scroll;
+    }
 
     [[nodiscard]] inline bool IsEntered() const
     {
@@ -420,10 +476,12 @@ class Mouse
     void SetMoved(float x, float y);
     void SetScrolled(float x, float y);
     void SetEntered(bool entered);
+    void UpdatePreviousState();
 
   private:
     Window *m_pWindow;
     std::bitset<GLFW_MOUSE_BUTTON_LAST + 1> m_Buttons;
+    std::bitset<GLFW_MOUSE_BUTTON_LAST + 1> m_PreviousButtons;
     float m_DeltaX;
     float m_DeltaY;
     float m_ScrollX;
@@ -479,14 +537,20 @@ enum class ControllerButton : uint8_t
 #define AE_CONTROLLER_AXIS_LEFT_Y 1
 #define AE_CONTROLLER_AXIS_RIGHT_X 2
 #define AE_CONTROLLER_AXIS_RIGHT_Y 3
-#define AE_CONTROLLER_AXIS_LAST AE_CONTROLLER_AXIS_RIGHT_Y
+#define AE_CONTROLLER_AXIS_LEFT_TRIGGER 4
+#define AE_CONTROLLER_AXIS_RIGHT_TRIGGER 5
+#define AE_CONTROLLER_L2 AE_CONTROLLER_AXIS_LEFT_TRIGGER
+#define AE_CONTROLLER_R2 AE_CONTROLLER_AXIS_RIGHT_TRIGGER
+#define AE_CONTROLLER_AXIS_LAST AE_CONTROLLER_AXIS_RIGHT_TRIGGER
 
 enum class ControllerAxis : uint8_t
 {
     LEFT_X = AE_CONTROLLER_AXIS_LEFT_X,
     LEFT_Y = AE_CONTROLLER_AXIS_LEFT_Y,
     RIGHT_X = AE_CONTROLLER_AXIS_RIGHT_X,
-    RIGHT_Y = AE_CONTROLLER_AXIS_RIGHT_Y
+    RIGHT_Y = AE_CONTROLLER_AXIS_RIGHT_Y,
+    LEFT_TRIGGER = AE_CONTROLLER_AXIS_LEFT_TRIGGER,
+    RIGHT_TRIGGER = AE_CONTROLLER_AXIS_RIGHT_TRIGGER
 };
 
 class Controller
@@ -501,12 +565,23 @@ class Controller
     [[nodiscard]] float GetAxis(int32_t axis) const;
     [[nodiscard]] float GetAxis(ControllerAxis axis) const;
 
+    [[nodiscard]] Vec2 GetLeftStick() const;
+    [[nodiscard]] Vec2 GetRightStick() const;
+    [[nodiscard]] Vec2 GetTriggers() const;
+
+    [[nodiscard]] float GetDeadzone() const { return m_Deadzone; }
+    void SetDeadzone(float deadzone) { m_Deadzone = deadzone; }
+
     [[nodiscard]] std::string GetName() const;
 
     static bool IsConnected(uint32_t id);
 
   private:
+    float ApplyDeadzone(float value) const;
+
+  private:
     uint32_t m_Id;
+    float m_Deadzone = 0.1f;
 };
 
 class IconSetContainer
@@ -663,6 +738,7 @@ class Context
 
 class WindowManager;
 class Interface;
+class Event;
 
 class Window
 {
@@ -772,6 +848,16 @@ class Window
         return m_Fps;
     }
 
+    inline double GetDeltaTime() const
+    {
+        return m_FrameDuration;
+    }
+
+    inline uint64_t GetFrameCount() const
+    {
+        return m_TotalFrameCount;
+    }
+
     void SetTitle(const std::string &title);
 
     void SetIconSet(const IconSet &iconSet);
@@ -780,10 +866,43 @@ class Window
     void SetCursor(const Cursor &cursor);
     void ResetCursor();
 
+    // Window state control
+    void Minimize();
+    void Maximize();
+    void Restore();
+
+    [[nodiscard]] bool IsMinimized() const;
+    [[nodiscard]] bool IsMaximized() const;
+
+    void SetPosition(int32_t x, int32_t y);
+    [[nodiscard]] int32_t GetX() const;
+    [[nodiscard]] int32_t GetY() const;
+    [[nodiscard]] Vec2 GetPosition() const;
+
+    void SetSize(uint32_t width, uint32_t height);
+
+    // Cursor control
+    void ShowCursor();
+    void HideCursor();
+    void LockCursor();
+    void UnlockCursor();
+    void CenterCursor();
+
+    [[nodiscard]] inline bool IsCursorVisible() const
+    {
+        return m_CursorVisible;
+    }
+
+    [[nodiscard]] inline bool IsCursorLocked() const
+    {
+        return m_CursorLocked;
+    }
+
     inline bool IsActive() const
     {
         return m_Active;
     }
+
     void SetActive();
 
     inline const std::array<float, 4> &GetClearColor() const
@@ -805,6 +924,11 @@ class Window
         m_ClearColor[1] = color[1];
         m_ClearColor[2] = color[2];
         m_ClearColor[3] = color[3];
+    }
+
+    inline void SetOnEventCB(const std::function<void(char)> &cb)
+    {
+        m_OnEvent = cb;
     }
 
     inline void SetOnKeyPressedCB(const std::function<void(char)> &cb)
@@ -974,7 +1098,72 @@ class Window
         m_OnWindowFocused = cb;
     }
 
+    inline void SetOnFramebufferResizeCB(const std::function<void(uint32_t, uint32_t)> &cb)
+    {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set framebuffer resize callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
+        m_OnFramebufferResize = cb;
+    }
+
+    inline void SetOnContentScaleChangedCB(const std::function<void(float, float)> &cb)
+    {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set content scale callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
+        m_OnContentScaleChanged = cb;
+    }
+
+    inline void SetOnFileDropCB(const std::function<void(const std::vector<std::string>&)> &cb)
+    {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set file drop callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
+        m_OnFileDrop = cb;
+    }
+
+    inline void SetOnWindowCloseCB(const std::function<bool()> &cb)
+    {
+#ifdef AE_DEBUG
+        if (m_Desc.type == WindowType::HEADLESS)
+        {
+            AE_LOG(AE_WARNING, "Tried to set window close callback but this is not applicable to headless windows");
+        }
+#endif // AE_DEBUG
+        m_OnWindowClose = cb;
+    }
+
+    inline void SetOnControllerConnectedCB(const std::function<void(int32_t)> &cb)
+    {
+        m_OnControllerConnected = cb;
+    }
+
+    inline void SetOnControllerDisconnectedCB(const std::function<void(int32_t)> &cb)
+    {
+        m_OnControllerDisconnected = cb;
+    }
+
     void SetOnInterfaceUpdateCB(const std::function<void()> &cb);
+
+    // Layer stack for event dispatching
+    inline void SetLayerStack(LayerStack* pLayerStack)
+    {
+        m_pLayerStack = pLayerStack;
+    }
+
+    [[nodiscard]] inline LayerStack* GetLayerStack() const
+    {
+        return m_pLayerStack;
+    }
 
   private:
     void AddChild(Window &child);
@@ -1025,6 +1214,15 @@ class Window
 
     void OnMonitor(GLFWmonitor *pMonitor, int event);
 
+    void OnFramebufferResize(uint32_t width, uint32_t height);
+    void OnContentScaleChanged(float xScale, float yScale);
+    void OnFileDrop(int count, const char** paths);
+    void OnWindowClose();
+    void OnControllerConnected(int controllerId);
+    void OnControllerDisconnected(int controllerId);
+
+    void DispatchEvent(Event& event);
+
     void Deactivate();
 
   private:
@@ -1045,6 +1243,12 @@ class Window
     double m_FrameTimeSum;
     double m_FrameDurationSum;
     uint32_t m_FrameCount;
+    uint64_t m_TotalFrameCount = 0;
+
+    bool m_Minimized = false;
+    bool m_Maximized = false;
+    bool m_CursorVisible = true;
+    bool m_CursorLocked = false;
 
     Keyboard m_Keyboard;
     Mouse m_Mouse;
@@ -1056,6 +1260,10 @@ class Window
     std::shared_ptr<Context> m_pContext;
     std::array<float, 4> m_ClearColor;
     std::unique_ptr<Interface> m_pInterface;
+
+    LayerStack* m_pLayerStack = nullptr;
+
+    std::function<void(int32_t)> m_OnEvent = nullptr;
 
     std::function<void(int32_t)> m_OnKeyPressed = nullptr;
     std::function<void(int32_t)> m_OnKeyReleased = nullptr;
@@ -1077,10 +1285,18 @@ class Window
 
     std::function<void()> m_OnMonitorConnected = nullptr;
 
+    std::function<void(uint32_t, uint32_t)> m_OnFramebufferResize = nullptr;
+    std::function<void(float, float)> m_OnContentScaleChanged = nullptr;
+    std::function<void(const std::vector<std::string>&)> m_OnFileDrop = nullptr;
+    std::function<bool()> m_OnWindowClose = nullptr; // Returns true to allow close, false to cancel
+    std::function<void(int32_t)> m_OnControllerConnected = nullptr;
+    std::function<void(int32_t)> m_OnControllerDisconnected = nullptr;
+
     bool m_Focused;
     bool m_Active;
     bool m_Created;
 
     friend class WindowManager;
 };
+
 } // namespace ae

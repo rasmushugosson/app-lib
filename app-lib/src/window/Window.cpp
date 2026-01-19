@@ -230,6 +230,10 @@ void ae::Window::Update()
     }
 #endif // AE_DEBUG
 
+    // Update previous input state before processing new events
+    m_Keyboard.UpdatePreviousState();
+    m_Mouse.UpdatePreviousState();
+
     if (m_Desc.type != WindowType::HEADLESS)
     {
         glfwPollEvents();
@@ -244,6 +248,7 @@ void ae::Window::Update()
 
     m_FrameTime = m_FrameTimer.GetElapsedTime();
     m_FrameTimeSum += m_FrameTime;
+    m_TotalFrameCount++;
 
     if (m_Desc.type != WindowType::HEADLESS)
     {
@@ -446,6 +451,202 @@ void ae::Window::ResetCursor()
     m_CurrentCursor = Cursor();
 
     glfwSetCursor(m_pWindow, nullptr);
+}
+
+void ae::Window::Minimize()
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG(AE_WARNING, "Tried to minimize window but it is not created");
+        return;
+    }
+
+    if (m_Desc.type == WindowType::HEADLESS)
+    {
+        AE_LOG(AE_WARNING, "Tried to minimize window but this is not applicable to headless windows");
+        return;
+    }
+#endif // AE_DEBUG
+
+    glfwIconifyWindow(m_pWindow);
+}
+
+void ae::Window::Maximize()
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG(AE_WARNING, "Tried to maximize window but it is not created");
+        return;
+    }
+
+    if (m_Desc.type == WindowType::HEADLESS)
+    {
+        AE_LOG(AE_WARNING, "Tried to maximize window but this is not applicable to headless windows");
+        return;
+    }
+#endif // AE_DEBUG
+
+    glfwMaximizeWindow(m_pWindow);
+}
+
+void ae::Window::Restore()
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG(AE_WARNING, "Tried to restore window but it is not created");
+        return;
+    }
+
+    if (m_Desc.type == WindowType::HEADLESS)
+    {
+        AE_LOG(AE_WARNING, "Tried to restore window but this is not applicable to headless windows");
+        return;
+    }
+#endif // AE_DEBUG
+
+    glfwRestoreWindow(m_pWindow);
+}
+
+bool ae::Window::IsMinimized() const
+{
+    return m_Minimized;
+}
+
+bool ae::Window::IsMaximized() const
+{
+    return m_Maximized;
+}
+
+void ae::Window::SetPosition(int32_t x, int32_t y)
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG(AE_WARNING, "Tried to set window position but it is not created");
+        return;
+    }
+
+    if (m_Desc.type == WindowType::HEADLESS)
+    {
+        AE_LOG(AE_WARNING, "Tried to set window position but this is not applicable to headless windows");
+        return;
+    }
+#endif // AE_DEBUG
+
+    glfwSetWindowPos(m_pWindow, x, y);
+}
+
+int32_t ae::Window::GetX() const
+{
+    int x, y;
+    glfwGetWindowPos(m_pWindow, &x, &y);
+    return x;
+}
+
+int32_t ae::Window::GetY() const
+{
+    int x, y;
+    glfwGetWindowPos(m_pWindow, &x, &y);
+    return y;
+}
+
+ae::Vec2 ae::Window::GetPosition() const
+{
+    int x, y;
+    glfwGetWindowPos(m_pWindow, &x, &y);
+    return {static_cast<float>(x), static_cast<float>(y)};
+}
+
+void ae::Window::SetSize(uint32_t width, uint32_t height)
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG(AE_WARNING, "Tried to set window size but it is not created");
+        return;
+    }
+
+    if (m_Desc.type == WindowType::HEADLESS)
+    {
+        AE_LOG(AE_WARNING, "Tried to set window size but this is not applicable to headless windows");
+        return;
+    }
+#endif // AE_DEBUG
+
+    glfwSetWindowSize(m_pWindow, static_cast<int>(width), static_cast<int>(height));
+}
+
+void ae::Window::ShowCursor()
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG(AE_WARNING, "Tried to show cursor but window is not created");
+        return;
+    }
+#endif // AE_DEBUG
+
+    glfwSetInputMode(m_pWindow, GLFW_CURSOR, m_CursorLocked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    m_CursorVisible = true;
+}
+
+void ae::Window::HideCursor()
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG(AE_WARNING, "Tried to hide cursor but window is not created");
+        return;
+    }
+#endif // AE_DEBUG
+
+    glfwSetInputMode(m_pWindow, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    m_CursorVisible = false;
+}
+
+void ae::Window::LockCursor()
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG(AE_WARNING, "Tried to lock cursor but window is not created");
+        return;
+    }
+#endif // AE_DEBUG
+
+    glfwSetInputMode(m_pWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    m_CursorLocked = true;
+}
+
+void ae::Window::UnlockCursor()
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG(AE_WARNING, "Tried to unlock cursor but window is not created");
+        return;
+    }
+#endif // AE_DEBUG
+
+    glfwSetInputMode(m_pWindow, GLFW_CURSOR, m_CursorVisible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN);
+    m_CursorLocked = false;
+}
+
+void ae::Window::CenterCursor()
+{
+#ifdef AE_DEBUG
+    if (!m_Created)
+    {
+        AE_LOG(AE_WARNING, "Tried to center cursor but window is not created");
+        return;
+    }
+#endif // AE_DEBUG
+
+    glfwSetCursorPos(m_pWindow, static_cast<double>(m_Desc.width) / 2.0,
+                     static_cast<double>(m_Desc.height) / 2.0);
 }
 
 void ae::Window::SetActive()
@@ -761,25 +962,35 @@ void ae::Window::InitInput()
     AE_LOG(AE_TRACE, "Controllers connected: {}", m_Controllers.size());
 }
 
+void ae::Window::DispatchEvent(Event& event)
+{
+    event.Dispatch();
+}
+
 void ae::Window::OnKey(int key, int scancode, int action, int mods)
 {
     m_pInterface->SendOnKeyEvent(key, scancode, action, mods);
 
-    if (action == GLFW_PRESS)
+    if (action == GLFW_PRESS || action == GLFW_REPEAT)
     {
         m_Keyboard.SetKeyPressed(static_cast<int32_t>(key), true);
 
-        if (m_OnKeyPressed)
+        KeyPressedEvent event(static_cast<int32_t>(key), action == GLFW_REPEAT);
+        DispatchEvent(event);
+
+        if (!event.IsConsumed() && m_OnKeyPressed)
         {
             m_OnKeyPressed(static_cast<int32_t>(key));
         }
     }
-
     else if (action == GLFW_RELEASE)
     {
         m_Keyboard.SetKeyPressed(static_cast<int32_t>(key), false);
 
-        if (m_OnKeyReleased)
+        KeyReleasedEvent event(static_cast<int32_t>(key));
+        DispatchEvent(event);
+
+        if (!event.IsConsumed() && m_OnKeyReleased)
         {
             m_OnKeyReleased(static_cast<int32_t>(key));
         }
@@ -792,7 +1003,10 @@ void ae::Window::OnChar(unsigned int c)
 
     m_Keyboard.SetKeyTyped(static_cast<int32_t>(c));
 
-    if (m_OnKeyTyped)
+    KeyTypedEvent event(c);
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnKeyTyped)
     {
         m_OnKeyTyped(static_cast<int32_t>(c));
     }
@@ -806,7 +1020,10 @@ void ae::Window::OnMouseButton(int button, int action, int mods)
     {
         m_Mouse.SetPressed(static_cast<int32_t>(button), true);
 
-        if (m_OnMouseButtonPressed)
+        MouseButtonPressedEvent event(static_cast<int32_t>(button));
+        DispatchEvent(event);
+
+        if (!event.IsConsumed() && m_OnMouseButtonPressed)
         {
             m_OnMouseButtonPressed(button);
         }
@@ -815,7 +1032,10 @@ void ae::Window::OnMouseButton(int button, int action, int mods)
     {
         m_Mouse.SetPressed(static_cast<int32_t>(button), false);
 
-        if (m_OnMouseButtonReleased)
+        MouseButtonReleasedEvent event(static_cast<int32_t>(button));
+        DispatchEvent(event);
+
+        if (!event.IsConsumed() && m_OnMouseButtonReleased)
         {
             m_OnMouseButtonReleased(button);
         }
@@ -828,7 +1048,10 @@ void ae::Window::OnMouseMoved(double x, double y)
 
     m_Mouse.SetMoved(static_cast<float>(x), static_cast<float>(y));
 
-    if (m_OnMouseMoved)
+    MouseMovedEvent event(static_cast<float>(x), static_cast<float>(y));
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnMouseMoved)
     {
         m_OnMouseMoved(static_cast<float>(x), static_cast<float>(y));
     }
@@ -840,7 +1063,10 @@ void ae::Window::OnMouseScrolled(double x, double y)
 
     m_Mouse.SetScrolled(static_cast<float>(x), static_cast<float>(y));
 
-    if (m_OnMouseScrolled)
+    MouseScrolledEvent event(static_cast<float>(x), static_cast<float>(y));
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnMouseScrolled)
     {
         m_OnMouseScrolled(static_cast<float>(x), static_cast<float>(y));
     }
@@ -852,14 +1078,27 @@ void ae::Window::OnMouseEntered(int entered)
 
     m_Mouse.SetEntered(static_cast<bool>(entered));
 
-    if (m_OnMouseEntered)
-    {
-        m_OnMouseEntered();
-    }
-
     if (entered)
     {
+        MouseEnteredEvent event;
+        DispatchEvent(event);
+
+        if (!event.IsConsumed() && m_OnMouseEntered)
+        {
+            m_OnMouseEntered();
+        }
+
         glfwSetCursor(m_pWindow, m_CurrentCursor.GetCursor());
+    }
+    else
+    {
+        MouseExitedEvent event;
+        DispatchEvent(event);
+
+        if (!event.IsConsumed() && m_OnMouseExited)
+        {
+            m_OnMouseExited();
+        }
     }
 }
 
@@ -873,7 +1112,10 @@ void ae::Window::OnWindowResize(uint32_t width, uint32_t height)
         m_pContext->OnResize(width, height);
     }
 
-    if (m_OnWindowResize)
+    WindowResizeEvent event(width, height);
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnWindowResize)
     {
         m_OnWindowResize(width, height);
     }
@@ -881,7 +1123,13 @@ void ae::Window::OnWindowResize(uint32_t width, uint32_t height)
 
 void ae::Window::OnWindowMinimalized()
 {
-    if (m_OnWindowMinimized)
+    m_Minimized = true;
+    m_Maximized = false;
+
+    WindowMinimizedEvent event;
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnWindowMinimized)
     {
         m_OnWindowMinimized();
     }
@@ -889,7 +1137,13 @@ void ae::Window::OnWindowMinimalized()
 
 void ae::Window::OnWindowMaximalized()
 {
-    if (m_OnWindowMaximized)
+    m_Maximized = true;
+    m_Minimized = false;
+
+    WindowMaximizedEvent event;
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnWindowMaximized)
     {
         m_OnWindowMaximized();
     }
@@ -897,7 +1151,13 @@ void ae::Window::OnWindowMaximalized()
 
 void ae::Window::OnWindowRestored()
 {
-    if (m_OnWindowRestored)
+    m_Minimized = false;
+    m_Maximized = false;
+
+    WindowRestoredEvent event;
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnWindowRestored)
     {
         m_OnWindowRestored();
     }
@@ -905,7 +1165,10 @@ void ae::Window::OnWindowRestored()
 
 void ae::Window::OnWindowMoved(uint32_t x, uint32_t y)
 {
-    if (m_OnWindowMoved)
+    WindowMovedEvent event(static_cast<int32_t>(x), static_cast<int32_t>(y));
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnWindowMoved)
     {
         m_OnWindowMoved(x, y);
     }
@@ -917,7 +1180,10 @@ void ae::Window::OnWindowFocused(int focused)
 
     m_Focused = static_cast<bool>(focused);
 
-    if (m_OnWindowFocused)
+    WindowFocusedEvent event(static_cast<bool>(focused));
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnWindowFocused)
     {
         m_OnWindowFocused(focused);
     }
@@ -933,6 +1199,88 @@ void ae::Window::OnMonitor(GLFWmonitor *pMonitor, int event)
     if (m_OnMonitorConnected)
     {
         m_OnMonitorConnected();
+    }
+}
+
+void ae::Window::OnFramebufferResize(uint32_t width, uint32_t height)
+{
+    FramebufferResizeEvent event(width, height);
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnFramebufferResize)
+    {
+        m_OnFramebufferResize(width, height);
+    }
+}
+
+void ae::Window::OnContentScaleChanged(float xScale, float yScale)
+{
+    ContentScaleChangedEvent event(xScale, yScale);
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnContentScaleChanged)
+    {
+        m_OnContentScaleChanged(xScale, yScale);
+    }
+}
+
+void ae::Window::OnFileDrop(int count, const char **paths)
+{
+    std::vector<std::string> pathList;
+    pathList.reserve(static_cast<size_t>(count));
+
+    for (int i = 0; i < count; ++i)
+    {
+        pathList.emplace_back(paths[i]);
+    }
+
+    FileDropEvent event(std::move(pathList));
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnFileDrop)
+    {
+        m_OnFileDrop(event.GetPaths());
+    }
+}
+
+void ae::Window::OnWindowClose()
+{
+    WindowCloseEvent event;
+    DispatchEvent(event);
+
+    // If event was consumed by layer stack, prevent closing
+    if (event.IsConsumed())
+    {
+        glfwSetWindowShouldClose(m_pWindow, GLFW_FALSE);
+        return;
+    }
+
+    // If callback returns false, prevent closing
+    if (m_OnWindowClose && !m_OnWindowClose())
+    {
+        glfwSetWindowShouldClose(m_pWindow, GLFW_FALSE);
+    }
+}
+
+void ae::Window::OnControllerConnected(int controllerId)
+{
+    ControllerConnectedEvent event(static_cast<int32_t>(controllerId));
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnControllerConnected)
+    {
+        m_OnControllerConnected(static_cast<int32_t>(controllerId));
+    }
+}
+
+void ae::Window::OnControllerDisconnected(int controllerId)
+{
+    ControllerDisconnectedEvent event(static_cast<int32_t>(controllerId));
+    DispatchEvent(event);
+
+    if (!event.IsConsumed() && m_OnControllerDisconnected)
+    {
+        m_OnControllerDisconnected(static_cast<int32_t>(controllerId));
     }
 }
 
