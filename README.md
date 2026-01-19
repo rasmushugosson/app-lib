@@ -5,13 +5,15 @@
 This library combines ten well-known APIs and libraries with additional wrapper and utility functionality. The aim of this library is to cover the basic boilerplate code required to use them together for graphics applications. The library is built using [Premake5](https://premake.github.io/) for `C++23`.
 
 The APIs and libraries used are:
-[OpenGL](https://www.opengl.org/), [GLFW](https://github.com/glfw/glfw), [GLEW](https://github.com/nigels-com/glew),
+[OpenGL](https://www.opengl.org/), [GLFW](https://github.com/glfw/glfw), [GLAD](https://glad.dav1d.de/),
 [Vulkan](https://www.vulkan.org/), [STB_Image](https://github.com/nothings/stb/blob/master/stb_image.h),
 [STB_Image_Write](https://github.com/nothings/stb/blob/master/stb_image_write.h),
 [STB_Vorbis](https://github.com/nothings/stb/blob/master/stb_vorbis.c),
 [Dear ImGui](https://github.com/ocornut/imgui), [OpenAL Soft](https://github.com/kcat/openal-soft) and [GLM](https://github.com/g-truc/glm).
 
-This library depends on [log-lib](https://github.com/rasmushugosson/log-lib), which is included as a git submodule.
+This library depends on the following libraries, included as git submodules:
+- [log-lib](https://github.com/rasmushugosson/log-lib) - Logging, exceptions and timing utilities
+- [event-lib](https://github.com/rasmushugosson/event-lib) - Event system and layer stack
 
 ## Getting Started
 
@@ -71,10 +73,10 @@ These commands assume `clang-format` and `clang-tidy` are installed on your syst
 - **Linux Dependencies:** On Linux, install the required system packages:
   ```bash
   # Debian/Ubuntu
-  sudo apt install libglfw3-dev libglew-dev libopenal-dev
+  sudo apt install libglfw3-dev libopenal-dev
 
   # Arch Linux
-  sudo pacman -S glfw glew openal
+  sudo pacman -S glfw openal
   ```
 
   For Vulkan support on Linux, install the Vulkan headers and validation layers:
@@ -91,7 +93,7 @@ These commands assume `clang-format` and `clang-tidy` are installed on your syst
 
 ## Using as a Submodule
 
-This library can be used as a git submodule in other Premake5 projects. Add it as a submodule (with recursive init to get log-lib) and include the App project definition in your `premake5.lua`:
+This library can be used as a git submodule in other Premake5 projects. Add it as a submodule (with recursive init to get dependencies) and include the App project definition in your `premake5.lua`:
 
 ```lua
 include("path/to/app-lib/app-project.lua")
@@ -100,14 +102,15 @@ project("YourProject")
     -- ...
     includedirs({
         "path/to/app-lib/dep/log-lib/log-lib/include",
+        "path/to/app-lib/dep/event-lib/event-lib/include",
         "path/to/app-lib/app-lib/include",
         "path/to/app-lib/vendor/glm",
         "path/to/app-lib/vendor/imgui"
     })
-    links({ "App", "ImGui", "STB", "Log" })
+    links({ "App", "ImGui", "STB", "GLAD", "Event", "Log" })
 ```
 
-The `app-project.lua` file defines the App project and automatically includes the Log project and vendor dependencies. The `premake5.lua` is used for standalone builds including the Sandbox example.
+The `app-project.lua` file defines the App project and automatically includes the Log project, Event project, and vendor dependencies. The `premake5.lua` is used for standalone builds including the Sandbox example.
 
 ## Usage
 
@@ -115,7 +118,7 @@ There are two main parts to this library: the `Window` class in the `Window.h` h
 
 ### Window Class
 
-The `Window` class is defined in the `Window.h` header file and is located in the `app-lib/include` folder. This class is a wrapper around [GLFW](https://github.com/glfw/glfw), [GLEW](https://github.com/nigels-com/glew) and [Dear ImGui](https://github.com/ocornut/imgui). It provides a simple way of creating a window, handling input events, adding interface components and setting up a rendering context.
+The `Window` class is defined in the `Window.h` header file and is located in the `app-lib/include` folder. This class is a wrapper around [GLFW](https://github.com/glfw/glfw), [GLAD](https://glad.dav1d.de/) and [Dear ImGui](https://github.com/ocornut/imgui). It provides a simple way of creating a window, handling input events, adding interface components and setting up a rendering context.
 
 To specify the properties of the created window, the `WindowDesc` struct is passed to the `Window` constructor:
 
@@ -151,6 +154,15 @@ struct WindowDesc
 };
 ```
 
+### Event Integration
+
+The `Window` class integrates with [event-lib](https://github.com/rasmushugosson/event-lib) for event dispatching. GLFW input and window events are automatically converted to event-lib events and dispatched globally. You can attach a `LayerStack` to the window for layer-based event handling:
+
+```cpp
+ae::LayerStack layerStack;
+window.SetLayerStack(&layerStack);
+```
+
 ### Additional Header Files
 
 The other header files in the `app-lib/include` folder contain utility classes and functions. `Files.h` is mostly a wrapper around [STB](https://github.com/nothings/stb) containing classes and methods for reading and writing image and audio files. The `OpenGL.h`, `Vulkan.h` and `OpenAL.h` header files each contain macros that check and throw custom exceptions for the respective API calls. The `DearImGui.h` and `OpenGLMaths.h` headers provide the third-party library interfaces.
@@ -180,7 +192,7 @@ All third-party libraries included as source code have been modified to work wit
 | Library | Type | Location | License |
 |---------|------|----------|---------|
 | GLFW | Precompiled static lib | `dep/GLFW` | Zlib |
-| GLEW | Precompiled static lib | `dep/GLEW` | Modified BSD / MIT |
+| GLAD | Source (generated) | `vendor/glad` | Public Domain / MIT |
 | OpenAL Soft | DLL + import lib | `dep/OpenALSoft` | LGPL v2.1 |
 | STB | Source | `vendor/stb` | Public Domain / MIT |
 | Dear ImGui | Source | `vendor/imgui` | MIT |
@@ -206,7 +218,7 @@ All license texts can be found in the `licenses/` folder. If you use this librar
 The `res` folder contains assets used in the example program:
 - `icons/` - Window icons of different sizes
 - `cursors/` - Custom cursor images
-- `fonts/` - Font used by Dear ImGui (Ubuntu font, licensed under Open Font License)
+- `fonts/` - Font used by Dear ImGui (Ubuntu font, licensed under Ubuntu Font License)
 
 All assets except the font are created by me.
 
