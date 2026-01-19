@@ -41,8 +41,6 @@ architecture("x64")
 configurations({ "Debug", "Release", "Dist" })
 warnings("Extra")
 
-defines({ "GLEW_STATIC" })
-
 filter("system:windows")
 defines({ "AE_WINDOWS" })
 
@@ -108,12 +106,10 @@ cppdialect("C++23")
 objdir("obj/%{prj.name}/%{cfg.buildcfg}")
 targetdir("bin/%{prj.name}/%{cfg.buildcfg}")
 
-defines({ "GLEW_STATIC" })
-
 files({ "sandbox/src/**.cpp", "sandbox/src/**.h" })
 
 includedirs({
-	"dep/GLEW/include",
+	"vendor/glad/include",
 	"dep/OpenALSoft/include",
 	"dep/log-lib/log-lib/include",
 	"dep/event-lib/event-lib/include",
@@ -133,11 +129,11 @@ filter("system:windows")
 links({
 	"dep/GLFW/lib/glfw3.lib",
 	"opengl32.lib",
-	"dep/GLEW/lib/glew32s.lib",
 	"Log",
 	"Event",
 	"STB",
 	"ImGui",
+	"GLAD",
 	"App",
 })
 
@@ -158,11 +154,11 @@ links({
 	"App",
 	"ImGui",
 	"STB",
+	"GLAD",
 	"Event",
 	"Log",
 	"glfw",
 	"GL",
-	"GLEW",
 	"openal",
 })
 
@@ -171,11 +167,11 @@ links({
 	"App",
 	"ImGui",
 	"STB",
+	"GLAD",
 	"Event",
 	"Log",
 	"glfw",
 	"OpenGL.framework",
-	"GLEW",
 	"openal",
 })
 

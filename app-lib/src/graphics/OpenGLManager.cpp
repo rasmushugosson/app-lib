@@ -8,9 +8,9 @@ void ae::OpenGLManager::AddContext()
 {
     if (m_ContextCount == 0)
     {
-        if (glewInit() != GLEW_OK)
+        if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
         {
-            AE_THROW_RUNTIME_ERROR("Failed to initialize GLEW when first graphics Context was created");
+            AE_THROW_RUNTIME_ERROR("Failed to initialize GLAD when first graphics Context was created");
             return;
         }
 

@@ -4,7 +4,7 @@
 #include "Layer.h"
 #include "Log.h"
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <bitset>
 #include <cstdint>

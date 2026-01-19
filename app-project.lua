@@ -69,6 +69,21 @@ includedirs({
 	vendor_dir .. "/glm",
 })
 
+project("GLAD")
+kind("StaticLib")
+language("C")
+objdir("obj/%{prj.name}/%{cfg.buildcfg}")
+targetdir("bin/%{prj.name}/%{cfg.buildcfg}")
+
+files({
+	vendor_dir .. "/glad/src/glad.c",
+	vendor_dir .. "/glad/include/**.h",
+})
+
+includedirs({
+	vendor_dir .. "/glad/include",
+})
+
 project("ImGui")
 kind("StaticLib")
 language("C++")
@@ -112,8 +127,6 @@ cppdialect("C++23")
 objdir("obj/%{prj.name}/%{cfg.buildcfg}")
 targetdir("bin/%{prj.name}/%{cfg.buildcfg}")
 
-defines({ "GLEW_STATIC" })
-
 files({
 	app_lib_src .. "/src/**.cpp",
 	app_lib_src .. "/src/**.h",
@@ -121,7 +134,7 @@ files({
 })
 
 includedirs({
-	dep_dir .. "/GLEW/include",
+	vendor_dir .. "/glad/include",
 	dep_dir .. "/OpenALSoft/include",
 	log_lib_dir .. "/log-lib/include",
 	event_lib_dir .. "/event-lib/include",
@@ -142,11 +155,11 @@ filter("system:windows")
 links({
 	dep_dir .. "/GLFW/lib/glfw3.lib",
 	"opengl32.lib",
-	dep_dir .. "/GLEW/lib/glew32s.lib",
 	"Log",
 	"Event",
 	"STB",
 	"ImGui",
+	"GLAD",
 })
 
 filter({ "system:windows", "configurations:Debug" })
@@ -159,24 +172,24 @@ filter("system:linux")
 links({
 	"glfw",
 	"GL",
-	"GLEW",
 	"openal",
 	"Log",
 	"Event",
 	"STB",
 	"ImGui",
+	"GLAD",
 })
 
 filter("system:macosx")
 links({
 	"glfw",
 	"OpenGL.framework",
-	"GLEW",
 	"openal",
 	"Log",
 	"Event",
 	"STB",
 	"ImGui",
+	"GLAD",
 })
 
 filter({})
