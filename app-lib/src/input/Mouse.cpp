@@ -22,6 +22,36 @@ bool ae::Mouse::IsButtonPressed(MouseButton button) const
     return m_Buttons[static_cast<int32_t>(button)];
 }
 
+bool ae::Mouse::WasButtonPressed(int32_t button) const
+{
+    if (button < 0 || button > GLFW_MOUSE_BUTTON_LAST)
+    {
+        return false;
+    }
+
+    return m_Buttons[button] && !m_PreviousButtons[button];
+}
+
+bool ae::Mouse::WasButtonPressed(MouseButton button) const
+{
+    return WasButtonPressed(static_cast<int32_t>(button));
+}
+
+bool ae::Mouse::WasButtonReleased(int32_t button) const
+{
+    if (button < 0 || button > GLFW_MOUSE_BUTTON_LAST)
+    {
+        return false;
+    }
+
+    return !m_Buttons[button] && m_PreviousButtons[button];
+}
+
+bool ae::Mouse::WasButtonReleased(MouseButton button) const
+{
+    return WasButtonReleased(static_cast<int32_t>(button));
+}
+
 float ae::Mouse::GetX() const
 {
     double x;
@@ -38,6 +68,15 @@ float ae::Mouse::GetY() const
     glfwGetCursorPos(m_pWindow->GetWindow(), &x, &y);
 
     return static_cast<float>(y);
+}
+
+ae::Vec2 ae::Mouse::GetPosition() const
+{
+    double x;
+    double y;
+    glfwGetCursorPos(m_pWindow->GetWindow(), &x, &y);
+
+    return {static_cast<float>(x), static_cast<float>(y)};
 }
 
 void ae::Mouse::SetX(float x)
@@ -75,4 +114,9 @@ void ae::Mouse::SetScrolled(float x, float y)
 void ae::Mouse::SetEntered(bool entered)
 {
     m_Entered = entered;
+}
+
+void ae::Mouse::UpdatePreviousState()
+{
+    m_PreviousButtons = m_Buttons;
 }
