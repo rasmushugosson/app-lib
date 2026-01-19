@@ -1,3 +1,6 @@
 [submodule "dep/log-lib"]
 	path = dep/log-lib
 	url = git@github.com:rasmushugosson/log-lib.git
+[submodule "dep/event-lib"]
+	path = dep/event-lib
+	url = git@github.com:rasmushugosson/event-lib.git
