@@ -5,6 +5,7 @@
 local app_lib_dir = path.getdirectory(_SCRIPT)
 local app_lib_src = app_lib_dir .. "/app-lib"
 local log_lib_dir = app_lib_dir .. "/dep/log-lib"
+local event_lib_dir = app_lib_dir .. "/dep/event-lib"
 local vendor_dir = app_lib_dir .. "/vendor"
 local dep_dir = app_lib_dir .. "/dep"
 
@@ -38,6 +39,7 @@ if vulkanAvailable then
 end
 
 include(log_lib_dir .. "/log-project.lua")
+include(event_lib_dir .. "/event-project.lua")
 
 project("STB")
 kind("StaticLib")
@@ -122,6 +124,7 @@ includedirs({
 	dep_dir .. "/GLEW/include",
 	dep_dir .. "/OpenALSoft/include",
 	log_lib_dir .. "/log-lib/include",
+	event_lib_dir .. "/event-lib/include",
 	app_lib_src .. "/include",
 	app_lib_src .. "/src",
 	vendor_dir .. "/glm",
@@ -141,6 +144,7 @@ links({
 	"opengl32.lib",
 	dep_dir .. "/GLEW/lib/glew32s.lib",
 	"Log",
+	"Event",
 	"STB",
 	"ImGui",
 })
@@ -158,6 +162,7 @@ links({
 	"GLEW",
 	"openal",
 	"Log",
+	"Event",
 	"STB",
 	"ImGui",
 })
@@ -169,6 +174,7 @@ links({
 	"GLEW",
 	"openal",
 	"Log",
+	"Event",
 	"STB",
 	"ImGui",
 })
