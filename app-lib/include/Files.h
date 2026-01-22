@@ -2,6 +2,9 @@
 
 #include "Log.h"
 
+#include <cstdio>
+#include <json.hpp>
+#include <memory>
 #include <stdint.h>
 #include <string>
 #include <string_view>
@@ -46,6 +49,8 @@ class File
 
   protected:
     virtual void ReadImpl() = 0;
+
+    void SetRead(bool read);
 
   protected:
     std::string m_Path;
@@ -288,4 +293,39 @@ class AudioFileStream : public File
     uint32_t m_ChunkSamples;
     bool m_EndReached;
 };
+
+class JsonFile : public TextFile
+{
+  public:
+    JsonFile(const std::string &path);
+    ~JsonFile() override;
+
+    nlohmann::json &operator[](const std::string &key);
+    const nlohmann::json &operator[](const std::string &key) const;
+    nlohmann::json &operator[](const char *key);
+    const nlohmann::json &operator[](const char *key) const;
+    nlohmann::json &operator[](size_t index);
+    const nlohmann::json &operator[](size_t index) const;
+
+    [[nodiscard]] nlohmann::json &GetJson();
+    [[nodiscard]] const nlohmann::json &GetJson() const;
+
+    [[nodiscard]] bool IsObject() const;
+    [[nodiscard]] bool IsArray() const;
+    [[nodiscard]] bool IsString() const;
+    [[nodiscard]] bool IsNumber() const;
+    [[nodiscard]] bool IsBoolean() const;
+    [[nodiscard]] bool IsNull() const;
+
+    [[nodiscard]] bool Contains(const std::string &key) const;
+    [[nodiscard]] size_t Size() const;
+    [[nodiscard]] std::string Dump(int indent = -1) const;
+
+  protected:
+    void ReadImpl() override;
+
+  private:
+    std::unique_ptr<nlohmann::json> m_pJson;
+};
+
 } // namespace ae

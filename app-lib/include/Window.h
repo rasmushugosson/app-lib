@@ -438,7 +438,7 @@ class Mouse
 
     inline Vec2 GetDelta()
     {
-        Vec2 delta = {m_DeltaX, m_DeltaY};
+        Vec2 delta = { m_DeltaX, m_DeltaY };
         m_DeltaX = 0.0f;
         m_DeltaY = 0.0f;
         return delta;
@@ -460,7 +460,7 @@ class Mouse
 
     inline Vec2 GetScroll()
     {
-        Vec2 scroll = {m_ScrollX, m_ScrollY};
+        Vec2 scroll = { m_ScrollX, m_ScrollY };
         m_ScrollX = 0.0f;
         m_ScrollY = 0.0f;
         return scroll;
@@ -569,8 +569,14 @@ class Controller
     [[nodiscard]] Vec2 GetRightStick() const;
     [[nodiscard]] Vec2 GetTriggers() const;
 
-    [[nodiscard]] float GetDeadzone() const { return m_Deadzone; }
-    void SetDeadzone(float deadzone) { m_Deadzone = deadzone; }
+    [[nodiscard]] float GetDeadzone() const
+    {
+        return m_Deadzone;
+    }
+    void SetDeadzone(float deadzone)
+    {
+        m_Deadzone = deadzone;
+    }
 
     [[nodiscard]] std::string GetName() const;
 
@@ -698,14 +704,17 @@ class Context
     {
         return m_GraphicsAPI;
     }
+
     [[nodiscard]] inline const std::string &GetGraphicsVersion() const
     {
         return m_GraphicsVersion;
     }
+
     [[nodiscard]] inline const std::string &GetGraphicsCard() const
     {
         return m_GraphicsCard;
     }
+
     [[nodiscard]] inline const std::string &GetGraphicsVendor() const
     {
         return m_GraphicsVendor;
@@ -1103,7 +1112,8 @@ class Window
 #ifdef AE_DEBUG
         if (m_Desc.type == WindowType::HEADLESS)
         {
-            AE_LOG(AE_WARNING, "Tried to set framebuffer resize callback but this is not applicable to headless windows");
+            AE_LOG(AE_WARNING,
+                   "Tried to set framebuffer resize callback but this is not applicable to headless windows");
         }
 #endif // AE_DEBUG
         m_OnFramebufferResize = cb;
@@ -1120,7 +1130,7 @@ class Window
         m_OnContentScaleChanged = cb;
     }
 
-    inline void SetOnFileDropCB(const std::function<void(const std::vector<std::string>&)> &cb)
+    inline void SetOnFileDropCB(const std::function<void(const std::vector<std::string> &)> &cb)
     {
 #ifdef AE_DEBUG
         if (m_Desc.type == WindowType::HEADLESS)
@@ -1155,12 +1165,12 @@ class Window
     void SetOnInterfaceUpdateCB(const std::function<void()> &cb);
 
     // Layer stack for event dispatching
-    inline void SetLayerStack(LayerStack* pLayerStack)
+    inline void SetLayerStack(LayerStack *pLayerStack)
     {
         m_pLayerStack = pLayerStack;
     }
 
-    [[nodiscard]] inline LayerStack* GetLayerStack() const
+    [[nodiscard]] inline LayerStack *GetLayerStack() const
     {
         return m_pLayerStack;
     }
@@ -1216,12 +1226,12 @@ class Window
 
     void OnFramebufferResize(uint32_t width, uint32_t height);
     void OnContentScaleChanged(float xScale, float yScale);
-    void OnFileDrop(int count, const char** paths);
+    void OnFileDrop(int count, const char **paths);
     void OnWindowClose();
     void OnControllerConnected(int controllerId);
     void OnControllerDisconnected(int controllerId);
 
-    void DispatchEvent(Event& event);
+    void DispatchEvent(Event &event);
 
     void Deactivate();
 
@@ -1261,7 +1271,7 @@ class Window
     std::array<float, 4> m_ClearColor;
     std::unique_ptr<Interface> m_pInterface;
 
-    LayerStack* m_pLayerStack = nullptr;
+    LayerStack *m_pLayerStack = nullptr;
 
     std::function<void(int32_t)> m_OnEvent = nullptr;
 
@@ -1287,7 +1297,7 @@ class Window
 
     std::function<void(uint32_t, uint32_t)> m_OnFramebufferResize = nullptr;
     std::function<void(float, float)> m_OnContentScaleChanged = nullptr;
-    std::function<void(const std::vector<std::string>&)> m_OnFileDrop = nullptr;
+    std::function<void(const std::vector<std::string> &)> m_OnFileDrop = nullptr;
     std::function<bool()> m_OnWindowClose = nullptr; // Returns true to allow close, false to cancel
     std::function<void(int32_t)> m_OnControllerConnected = nullptr;
     std::function<void(int32_t)> m_OnControllerDisconnected = nullptr;

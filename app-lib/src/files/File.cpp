@@ -6,11 +6,11 @@
 #include <filesystem>
 #include <string_view>
 
-ae::File::File() = default;
+ae::File::File() : m_Read(false) {}
 
-ae::File::File(std::string_view path) : m_Path(AE_FILE_PATH(path)) {}
+ae::File::File(std::string_view path) : m_Path(AE_FILE_PATH(path)), m_Read(false) {}
 
-ae::File::File(const std::string &path) : m_Path(AE_FILE_PATH(path)) {}
+ae::File::File(const std::string &path) : m_Path(AE_FILE_PATH(path)), m_Read(false) {}
 
 bool ae::File::Exists(std::string_view path)
 {
@@ -27,6 +27,7 @@ ae::File &ae::File::Read()
     }
 
     ReadImpl();
+    m_Read = true;
 
     return *this;
 }
@@ -34,4 +35,9 @@ ae::File &ae::File::Read()
 bool ae::File::Exists(const std::string &path)
 {
     return Exists(std::string_view{ path });
+}
+
+void ae::File::SetRead(bool read)
+{
+    m_Read = read;
 }
