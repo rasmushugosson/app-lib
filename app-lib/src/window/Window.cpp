@@ -541,23 +541,26 @@ void ae::Window::SetPosition(int32_t x, int32_t y)
 
 int32_t ae::Window::GetX() const
 {
-    int x, y;
+    int x;
+    int y;
     glfwGetWindowPos(m_pWindow, &x, &y);
     return x;
 }
 
 int32_t ae::Window::GetY() const
 {
-    int x, y;
+    int x;
+    int y;
     glfwGetWindowPos(m_pWindow, &x, &y);
     return y;
 }
 
 ae::Vec2 ae::Window::GetPosition() const
 {
-    int x, y;
+    int x;
+    int y;
     glfwGetWindowPos(m_pWindow, &x, &y);
-    return {static_cast<float>(x), static_cast<float>(y)};
+    return { .x=static_cast<float>(x), .y=static_cast<float>(y) };
 }
 
 void ae::Window::SetSize(uint32_t width, uint32_t height)
@@ -645,8 +648,7 @@ void ae::Window::CenterCursor()
     }
 #endif // AE_DEBUG
 
-    glfwSetCursorPos(m_pWindow, static_cast<double>(m_Desc.width) / 2.0,
-                     static_cast<double>(m_Desc.height) / 2.0);
+    glfwSetCursorPos(m_pWindow, static_cast<double>(m_Desc.width) / 2.0, static_cast<double>(m_Desc.height) / 2.0);
 }
 
 void ae::Window::SetActive()
@@ -962,7 +964,7 @@ void ae::Window::InitInput()
     AE_LOG(AE_TRACE, "Controllers connected: {}", m_Controllers.size());
 }
 
-void ae::Window::DispatchEvent(Event& event)
+void ae::Window::DispatchEvent(Event &event)
 {
     event.Dispatch();
 }

@@ -60,11 +60,10 @@ ae::Vec2 ae::Controller::GetLeftStick() const
 #ifdef AE_DEBUG
         AE_LOG(AE_WARNING, "Tried to get left stick but controller {} is not connected", m_Id);
 #endif
-        return {0.0f, 0.0f};
+        return { .x=0.0f, .y=0.0f };
     }
 
-    return {ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]),
-            ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y])};
+    return { .x=ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]), .y=ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]) };
 }
 
 ae::Vec2 ae::Controller::GetRightStick() const
@@ -75,11 +74,11 @@ ae::Vec2 ae::Controller::GetRightStick() const
 #ifdef AE_DEBUG
         AE_LOG(AE_WARNING, "Tried to get right stick but controller {} is not connected", m_Id);
 #endif
-        return {0.0f, 0.0f};
+        return { .x=0.0f, .y=0.0f };
     }
 
-    return {ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X]),
-            ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y])};
+    return { .x=ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_X]),
+             .y=ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]) };
 }
 
 ae::Vec2 ae::Controller::GetTriggers() const
@@ -90,12 +89,11 @@ ae::Vec2 ae::Controller::GetTriggers() const
 #ifdef AE_DEBUG
         AE_LOG(AE_WARNING, "Tried to get triggers but controller {} is not connected", m_Id);
 #endif
-        return {0.0f, 0.0f};
+        return { .x=0.0f, .y=0.0f };
     }
 
     // Triggers don't need deadzone - they're linear from -1 to 1
-    return {state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER],
-            state.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER]};
+    return { .x=state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER], .y=state.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER] };
 }
 
 float ae::Controller::ApplyDeadzone(float value) const

@@ -76,7 +76,7 @@ ae::Vec2 ae::Mouse::GetPosition() const
     double y;
     glfwGetCursorPos(m_pWindow->GetWindow(), &x, &y);
 
-    return {static_cast<float>(x), static_cast<float>(y)};
+    return { .x=static_cast<float>(x), .y=static_cast<float>(y) };
 }
 
 void ae::Mouse::SetX(float x)
