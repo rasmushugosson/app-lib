@@ -69,6 +69,18 @@ includedirs({
 	vendor_dir .. "/glm",
 })
 
+project("Nlohmann")
+kind("Utility")
+language("C++")
+
+files({
+	vendor_dir .. "/nlohmann/**.hpp",
+})
+
+includedirs({
+	vendor_dir .. "/nlohmann",
+})
+
 project("GLAD")
 kind("StaticLib")
 language("C")
@@ -143,13 +155,14 @@ includedirs({
 	vendor_dir .. "/glm",
 	vendor_dir .. "/stb",
 	vendor_dir .. "/imgui",
+	vendor_dir .. "/nlohmann",
 })
 
 filter("system:windows")
 includedirs({ dep_dir .. "/GLFW/include" })
 filter({})
 
-dependson({ "GLM" })
+dependson({ "GLM", "Nlohmann" })
 
 filter("system:windows")
 links({

@@ -117,13 +117,14 @@ includedirs({
 	"sandbox/src",
 	"vendor/glm",
 	"vendor/imgui",
+	"vendor/nlohmann",
 })
 
 filter("system:windows")
 includedirs({ "dep/GLFW/include" })
 filter({})
 
-dependson({ "GLM" })
+dependson({ "GLM", "Nlohmann" })
 
 filter("system:windows")
 links({

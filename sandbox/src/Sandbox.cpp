@@ -1,14 +1,16 @@
 #include "general/pch.h"
 
 // Author: Rasmus Hugosson
-// Date: 2026-01-01
+// Date: 2026-01-23
 
 // Description: This is a simple example program demonstrating how
 // this library can be used to create a basic graphics application.
 
+#include <fstream>
+
 // All headers included in the library
 #include "DearImGui.h"
-#include "Files.h"  // Not actually used in this example
+#include "Files.h"  // Used for JsonFile demo
 #include "OpenAL.h" // Not actually used in this example
 #include "OpenGL.h" // Not actually used in this example
 #include "OpenGLMaths.h"
@@ -141,14 +143,6 @@ static void Demo()
         // We can log the exception to the console
         AE_LOG(AE_ERROR, "{}", e.what());
     }
-
-    // We can also access GLM math functions
-    glm::vec2 a(1.0f, 2.0f);
-    glm::vec2 b(3.0f, 4.0f);
-
-    // And perform some operations to see that it works
-    glm::vec2 c = a + b;
-    AE_LOG(AE_TRACE, "c: vec2[{}, {}]", c.x, c.y);
 }
 
 int main()

@@ -2,14 +2,14 @@
 
 ## General
 
-This library combines ten well-known APIs and libraries with additional wrapper and utility functionality. The aim of this library is to cover the basic boilerplate code required to use them together for graphics applications. The library is built using [Premake5](https://premake.github.io/) for `C++23`.
+This library combines eleven well-known APIs and libraries with additional wrapper and utility functionality. The aim of this library is to cover the basic boilerplate code required to use them together for graphics applications. The library is built using [Premake5](https://premake.github.io/) for `C++23`.
 
 The APIs and libraries used are:
 [OpenGL](https://www.opengl.org/), [GLFW](https://github.com/glfw/glfw), [GLAD](https://glad.dav1d.de/),
 [Vulkan](https://www.vulkan.org/), [STB_Image](https://github.com/nothings/stb/blob/master/stb_image.h),
 [STB_Image_Write](https://github.com/nothings/stb/blob/master/stb_image_write.h),
 [STB_Vorbis](https://github.com/nothings/stb/blob/master/stb_vorbis.c),
-[Dear ImGui](https://github.com/ocornut/imgui), [OpenAL Soft](https://github.com/kcat/openal-soft) and [GLM](https://github.com/g-truc/glm).
+[Dear ImGui](https://github.com/ocornut/imgui), [OpenAL Soft](https://github.com/kcat/openal-soft), [GLM](https://github.com/g-truc/glm) and [nlohmann/json](https://github.com/nlohmann/json).
 
 This library depends on the following libraries, included as git submodules:
 - [log-lib](https://github.com/rasmushugosson/log-lib) - Logging, exceptions and timing utilities
@@ -105,7 +105,8 @@ project("YourProject")
         "path/to/app-lib/dep/event-lib/event-lib/include",
         "path/to/app-lib/app-lib/include",
         "path/to/app-lib/vendor/glm",
-        "path/to/app-lib/vendor/imgui"
+        "path/to/app-lib/vendor/imgui",
+        "path/to/app-lib/vendor/nlohmann"
     })
     links({ "App", "ImGui", "STB", "GLAD", "Event", "Log" })
 ```
@@ -165,7 +166,7 @@ window.SetLayerStack(&layerStack);
 
 ### Additional Header Files
 
-The other header files in the `app-lib/include` folder contain utility classes and functions. `Files.h` is mostly a wrapper around [STB](https://github.com/nothings/stb) containing classes and methods for reading and writing image and audio files. The `OpenGL.h`, `Vulkan.h` and `OpenAL.h` header files each contain macros that check and throw custom exceptions for the respective API calls. The `DearImGui.h` and `OpenGLMaths.h` headers provide the third-party library interfaces.
+The other header files in the `app-lib/include` folder contain utility classes and functions. `Files.h` contains wrappers around [STB](https://github.com/nothings/stb) for reading and writing image and audio files, as well as a `JsonFile` class that wraps [nlohmann/json](https://github.com/nlohmann/json) for convenient JSON file handling. The `OpenGL.h`, `Vulkan.h` and `OpenAL.h` header files each contain macros that check and throw custom exceptions for the respective API calls. The `DearImGui.h` and `OpenGLMaths.h` headers provide the third-party library interfaces.
 
 ### Build Configurations
 
@@ -197,6 +198,7 @@ All third-party libraries included as source code have been modified to work wit
 | STB | Source | `vendor/stb` | Public Domain / MIT |
 | Dear ImGui | Source | `vendor/imgui` | MIT |
 | GLM | Header-only | `vendor/glm` | MIT |
+| nlohmann/json | Header-only | `vendor/nlohmann` | MIT |
 
 ### System Libraries (not bundled)
 
