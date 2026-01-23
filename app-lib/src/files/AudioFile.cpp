@@ -5,6 +5,8 @@
 
 #include <filesystem>
 
+ae::AudioFile::AudioFile() :  m_SampleRate(0), m_Channels(0), m_Samples(0) {}
+
 ae::AudioFile::AudioFile(const std::string &path) : File(path), m_SampleRate(0), m_Channels(0), m_Samples(0) {}
 
 void ae::AudioFile::ReadImpl()
@@ -36,6 +38,12 @@ void ae::AudioFile::ReadImpl()
     }
 
     stb_vorbis_close(pVorbis);
+}
+
+ae::AudioFileStream::AudioFileStream()
+    :  m_pVorbis(nullptr), m_SampleRate(0), m_Channels(0), m_Samples(0), m_ChunkSamples(4096),
+      m_EndReached(false)
+{
 }
 
 ae::AudioFileStream::AudioFileStream(const std::string &path, uint32_t chunkSamples)

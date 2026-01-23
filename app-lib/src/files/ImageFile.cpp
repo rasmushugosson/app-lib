@@ -4,6 +4,8 @@
 #include "stb_image.h"
 #include "stb_image_write.h"
 
+template <typename T> ae::ImageFile<T>::ImageFile() : File(), m_Data(), m_Width(0), m_Height(0), m_Channels(0) {}
+
 template <typename T>
 ae::ImageFile<T>::ImageFile(const std::string &path) : File(path), m_Data(), m_Width(0), m_Height(0), m_Channels(0)
 {
@@ -12,8 +14,11 @@ ae::ImageFile<T>::ImageFile(const std::string &path) : File(path), m_Data(), m_W
 
 template <typename T>
 ae::ImageFile<T>::ImageFile(T *pData, uint32_t width, uint32_t height, uint32_t channels)
-    : File(), m_Data(pData), m_Width(width), m_Height(height), m_Channels(channels)
+    : File(), m_Data(), m_Width(width), m_Height(height), m_Channels(channels)
 {
+    size_t dataSize = static_cast<size_t>(width) * height * channels;
+    m_Data.resize(dataSize);
+    memcpy(m_Data.data(), pData, dataSize * sizeof(T));
 }
 
 template <typename T>
@@ -69,7 +74,7 @@ template <typename T> void ae::ImageFile<T>::Export(const std::string &path) con
         }
         else
         {
-            stbi_write_hdr(path.c_str(), m_Width, m_Height, m_Channels, reinterpret_cast<float *>(m_Data.data()));
+            stbi_write_hdr(path.c_str(), m_Width, m_Height, m_Channels, const_cast<float *>(m_Data.data()));
         }
     }
 }
@@ -114,3 +119,7 @@ template <typename T> void ae::ImageFile<T>::ReadImpl()
         }
     }
 }
+
+// Explicit template instantiations
+template class ae::ImageFile<uint8_t>;
+template class ae::ImageFile<float>;

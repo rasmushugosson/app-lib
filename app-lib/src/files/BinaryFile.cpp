@@ -4,6 +4,8 @@
 
 #include <utility>
 
+ae::BinaryFile::BinaryFile()  = default;
+
 ae::BinaryFile::BinaryFile(const std::string &path) : File(path) {}
 
 void ae::BinaryFile::ReadImpl()

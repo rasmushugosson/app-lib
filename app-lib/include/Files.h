@@ -33,6 +33,8 @@ class File
     virtual ~File() = default;
 
     File &Read();
+    void SetPath(std::string_view path);
+    void SetPath(const std::string &path);
 
     [[nodiscard]] inline bool IsRead() const
     {
@@ -62,6 +64,7 @@ class File
 class TextFile : public File
 {
   public:
+    TextFile();
     TextFile(const std::string &path);
     ~TextFile() override = default;
 
@@ -88,6 +91,7 @@ class TextFile : public File
 class BinaryFile : public File
 {
   public:
+    BinaryFile();
     BinaryFile(const std::string &path);
     ~BinaryFile() override = default;
 
@@ -117,6 +121,7 @@ template <typename T> class ImageFile : public File
                   "ImageFile only supports uint8_t or float types");
 
   public:
+    ImageFile();
     ImageFile(const std::string &path);
     ImageFile(T *pData, uint32_t width, uint32_t height, uint32_t channels);
     ImageFile(const std::vector<T> &data, uint32_t width, uint32_t height, uint32_t channels);
@@ -163,6 +168,7 @@ template <typename T> class ImageFile : public File
 class AudioFile : public File
 {
   public:
+    AudioFile();
     AudioFile(const std::string &path);
     ~AudioFile() override = default;
 
@@ -245,6 +251,7 @@ class AudioFile : public File
 class AudioFileStream : public File
 {
   public:
+    AudioFileStream();
     AudioFileStream(const std::string &path, uint32_t chunkSamples);
     ~AudioFileStream() override;
 
@@ -297,6 +304,7 @@ class AudioFileStream : public File
 class JsonFile : public TextFile
 {
   public:
+    JsonFile();
     JsonFile(const std::string &path);
     ~JsonFile() override;
 
