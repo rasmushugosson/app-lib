@@ -8,7 +8,32 @@
 
 #include "Log.h"
 
+#include <cstdint>
 #include <vulkan/vulkan.h>
+
+namespace ae
+{
+struct VulkanResources
+{
+    VkInstance instance;
+    VkPhysicalDevice physicalDevice;
+    VkDevice device;
+    VkQueue graphicsQueue;
+    uint32_t graphicsQueueFamilyIndex;
+
+    VkSurfaceKHR surface;
+    VkSwapchainKHR swapchain;
+    VkFormat swapchainFormat;
+    VkExtent2D swapchainExtent;
+    VkRenderPass renderPass;
+    VkCommandPool commandPool;
+
+    uint32_t currentFrameIndex;
+    uint32_t currentImageIndex;
+};
+
+uint32_t VulkanFindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
+} // namespace ae
 
 #ifndef AE_DIST
 
@@ -17,8 +42,10 @@ namespace ae
 void VulkanCheckResult(VkResult result, const std::string &call, const std::string &file, uint32_t line);
 
 #define VK_CHECK(x)                                                                                                    \
-    VkResult err = x;                                                                                                  \
-    ae::VulkanCheckResult(err, #x, __FILE__, __LINE__)
+    {                                                                                                                  \
+        VkResult err = x;                                                                                              \
+        ae::VulkanCheckResult(err, #x, __FILE__, __LINE__);                                                            \
+    }
 } // namespace ae
 
 #else

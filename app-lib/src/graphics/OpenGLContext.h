@@ -11,6 +11,10 @@ namespace ae
 		OpenGLContext(const OpenGLContext&) = delete;
 		OpenGLContext& operator=(const OpenGLContext&) = delete;
 		~OpenGLContext() = default;
+
+#if defined(AE_VULKAN) && defined(AE_DEBUG)
+		VulkanResources GetVulkanResources() const override;
+#endif
 	protected:
 		bool CreateImpl() override;
 		void ActivateImpl() override;

@@ -3,6 +3,7 @@
 #include "Event.h"
 #include "Layer.h"
 #include "Log.h"
+#include "Vulkan.h"
 
 #include <glad/glad.h>
 
@@ -720,6 +721,10 @@ class Context
     {
         return m_GraphicsVendor;
     }
+
+#ifdef AE_VULKAN
+    virtual VulkanResources GetVulkanResources() const;
+#endif
 
   protected:
     void Create();

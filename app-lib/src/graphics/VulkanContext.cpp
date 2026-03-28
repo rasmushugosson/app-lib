@@ -556,4 +556,26 @@ void ae::VulkanContext::OnResize(uint32_t width, uint32_t height)
     m_NeedsResize = true;
 }
 
+ae::VulkanResources ae::VulkanContext::GetVulkanResources() const
+{
+    VulkanResources resources{};
+    resources.instance = ae::VulkanManager::Get().GetInstance();
+    resources.physicalDevice = ae::VulkanManager::Get().GetPhysicalDevice();
+    resources.device = ae::VulkanManager::Get().GetDevice();
+    resources.graphicsQueue = ae::VulkanManager::Get().GetGraphicsQueue();
+    resources.graphicsQueueFamilyIndex = ae::VulkanManager::Get().GetGraphicsQueueFamilyIndex();
+
+    resources.surface = m_Surface;
+    resources.swapchain = m_SwapChain;
+    resources.swapchainFormat = m_SwapChainImageFormat;
+    resources.swapchainExtent = m_SwapChainExtent;
+    resources.renderPass = m_RenderPass;
+    resources.commandPool = m_CommandPool;
+
+    resources.currentFrameIndex = m_CurrentFrame;
+    resources.currentImageIndex = m_CurrentImageIndex;
+
+    return resources;
+}
+
 #endif // AE_VULKAN

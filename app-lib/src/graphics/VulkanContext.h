@@ -57,6 +57,8 @@ namespace ae
 		inline VkSemaphore GetImageAvailableSemaphore(uint32_t index) const { return m_ImageAvailableSemaphores[index]; }
 		inline VkSemaphore GetRenderFinishedSemaphore(uint32_t index) const { return m_RenderFinishedSemaphores[index]; }
 		inline VkFence GetInFlightFence(uint32_t index) const { return m_InFlightFences[index]; }
+
+		VulkanResources GetVulkanResources() const override;
 	protected:
 		bool CreateImpl() override;
 		void ActivateImpl() override;

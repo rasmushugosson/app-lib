@@ -76,3 +76,13 @@ void ae::Context::Destroy()
 }
 
 void ae::Context::OnResize([[maybe_unused]] uint32_t width, [[maybe_unused]] uint32_t height) {}
+
+#ifdef AE_VULKAN
+ae::VulkanResources ae::Context::GetVulkanResources() const
+{
+#ifdef AE_DEBUG
+    AE_THROW_RUNTIME_ERROR("Tried to get Vulkan resources from Context, but context type is unknown");
+#endif
+    return {};
+}
+#endif

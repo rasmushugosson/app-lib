@@ -50,16 +50,9 @@ bool ae::VulkanInterface::CreateImpl()
     init_info.MinImageCount = 2;
     init_info.ImageCount = static_cast<uint32_t>(pVulkanContext->GetSwapChainImages().size());
     init_info.CheckVkResultFn = nullptr;
+    init_info.PipelineInfoMain.RenderPass = pVulkanContext->GetRenderPass();
 
-    // Copy font atlas to GPU
-    ImGui_ImplVulkan_Init(&init_info, pVulkanContext->GetRenderPass());
-
-    VkCommandBuffer fontCmd = BeginSingleTimeCommands();
-
-    ImGui_ImplVulkan_CreateFontsTexture(fontCmd);
-    EndSingleTimeCommands(fontCmd);
-
-    ImGui_ImplVulkan_DestroyFontUploadObjects();
+    ImGui_ImplVulkan_Init(&init_info);
 
     return true;
 }

@@ -38,3 +38,11 @@ void ae::OpenGLContext::DestroyImpl()
     m_GraphicsCard = "Undefined";
     m_GraphicsVendor = "Undefined";
 }
+
+#if defined(AE_VULKAN) && defined(AE_DEBUG)
+ae::VulkanResources ae::OpenGLContext::GetVulkanResources() const
+{
+    AE_THROW_RUNTIME_ERROR("Tried to get Vulkan resources from Context, but your created Window uses OpenGL as its graphics API");
+    return {};
+}
+#endif
