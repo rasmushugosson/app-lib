@@ -89,7 +89,7 @@ template <typename T> void ae::ImageFile<T>::ReadImpl()
         if (pData)
         {
             m_Data.resize(m_Width * m_Height * m_Channels);
-            memcpy(m_Data.data(), pData, m_Data.size());
+            memcpy(m_Data.data(), pData, m_Data.size() * sizeof(T));
             stbi_image_free(pData);
         }
 
@@ -108,7 +108,7 @@ template <typename T> void ae::ImageFile<T>::ReadImpl()
         if (pData)
         {
             m_Data.resize(m_Width * m_Height * m_Channels);
-            memcpy(m_Data.data(), pData, m_Data.size());
+            memcpy(m_Data.data(), pData, m_Data.size() * sizeof(T));
             stbi_image_free(pData);
         }
 

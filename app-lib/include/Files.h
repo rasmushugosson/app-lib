@@ -158,7 +158,6 @@ template <typename T> class ImageFile : public File
     void ReadImpl() override;
 
   private:
-    std::string m_Path;
     std::vector<T> m_Data;
     uint32_t m_Width;
     uint32_t m_Height;
