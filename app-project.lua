@@ -172,6 +172,20 @@ includedirs({
 	vendor_dir .. "/lua",
 })
 
+-- Toml++ (header-only utility project)
+project("Toml")
+kind("Utility")
+language("C++")
+
+files({
+	vendor_dir .. "/toml++/toml.hpp",
+	vendor_dir .. "/toml++/impl/**.hpp",
+})
+
+includedirs({
+	vendor_dir .. "/toml++",  -- for <toml.hpp>
+})
+
 project("App")
 kind("StaticLib")
 language("C++")
@@ -198,13 +212,14 @@ includedirs({
 	vendor_dir .. "/nlohmann",
 	vendor_dir .. "/lua",
 	vendor_dir .. "/sol",  -- for <sol/sol.hpp>
+	vendor_dir .. "/toml++",  -- for <toml.hpp>
 })
 
 filter("system:windows")
 includedirs({ dep_dir .. "/GLFW/include" })
 filter({})
 
-dependson({ "GLM", "Nlohmann", "Sol" })
+dependson({ "GLM", "Nlohmann", "Sol", "Toml" })
 
 filter("system:windows")
 links({

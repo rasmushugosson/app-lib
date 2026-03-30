@@ -10,7 +10,7 @@ The APIs and libraries used are:
 [STB_Image_Write](https://github.com/nothings/stb/blob/master/stb_image_write.h),
 [STB_Vorbis](https://github.com/nothings/stb/blob/master/stb_vorbis.c),
 [Dear ImGui](https://github.com/ocornut/imgui), [OpenAL Soft](https://github.com/kcat/openal-soft), [GLM](https://github.com/g-truc/glm), [nlohmann/json](https://github.com/nlohmann/json),
-[Lua](https://www.lua.org/) and [sol3](https://github.com/ThePhD/sol2).
+[Lua](https://www.lua.org/), [sol3](https://github.com/ThePhD/sol2) and [toml++](https://github.com/marzer/tomlplusplus).
 
 This library depends on the following libraries, included as git submodules:
 - [log-lib](https://github.com/rasmushugosson/log-lib) - Logging, exceptions and timing utilities
@@ -109,7 +109,8 @@ project("YourProject")
         "path/to/app-lib/vendor/imgui",
         "path/to/app-lib/vendor/nlohmann",
         "path/to/app-lib/vendor/lua",
-        "path/to/app-lib/vendor/sol" 
+        "path/to/app-lib/vendor/sol",
+        "path/to/app-lib/vendor/toml++"
     })
     links({ "App", "Lua", "ImGui", "STB", "GLAD", "Event", "Log" })
 ```
@@ -170,7 +171,7 @@ window.SetLayerStack(&layerStack);
 
 ### Additional Header Files
 
-The other header files in the `app-lib/include` folder contain utility classes and functions. `Files.h` contains wrappers around [STB](https://github.com/nothings/stb) for reading and writing image and audio files, as well as a `JsonFile` class that wraps [nlohmann/json](https://github.com/nlohmann/json) for convenient JSON file handling. The `OpenGL.h`, `Vulkan.h` and `OpenAL.h` header files each contain macros that check and throw custom exceptions for the respective API calls. The `DearImGui.h` and `OpenGLMaths.h` headers provide the Dear ImGui and GLM interfaces. The `Lua.h` header exposes the full [sol3](https://github.com/ThePhD/sol2) C++ binding API on top of the bundled [Lua](https://www.lua.org/) runtime.
+The other header files in the `app-lib/include` folder contain utility classes and functions. `Files.h` contains wrappers around [STB](https://github.com/nothings/stb) for reading and writing image and audio files, as well as a `JsonFile` class that wraps [nlohmann/json](https://github.com/nlohmann/json) for convenient JSON file handling. The `OpenGL.h`, `Vulkan.h` and `OpenAL.h` header files each contain macros that check and throw custom exceptions for the respective API calls. The `DearImGui.h` and `OpenGLMaths.h` headers provide the Dear ImGui and GLM interfaces. The `Lua.h` header exposes the full [sol3](https://github.com/ThePhD/sol2) C++ binding API on top of the bundled [Lua](https://www.lua.org/) runtime. The `TOML.h` header exposes the [toml++](https://github.com/marzer/tomlplusplus) TOML parsing API.
 
 ### Build Configurations
 
@@ -205,6 +206,7 @@ All third-party libraries included as source code have been modified to work wit
 | nlohmann/json | Header-only | `vendor/nlohmann` | MIT |
 | Lua | Source | `vendor/lua` | MIT |
 | sol3 | Header-only | `vendor/sol` | MIT |
+| toml++ | Header-only | `vendor/toml++` | MIT |
 
 ### System Libraries (not bundled)
 
