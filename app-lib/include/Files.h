@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <nlohmann/json.hpp>
+#include <toml.hpp>
 #include <memory>
 #include <stdint.h>
 #include <string>
@@ -333,6 +334,29 @@ class JsonFile : public TextFile
 
   private:
     std::unique_ptr<nlohmann::json> m_pJson;
+};
+
+class TomlFile : public TextFile
+{
+  public:
+    TomlFile();
+    TomlFile(const std::string &path);
+    ~TomlFile() override;
+
+    toml::node_view<toml::node> operator[](std::string_view key);
+    toml::node_view<const toml::node> operator[](std::string_view key) const;
+
+    [[nodiscard]] toml::table &GetTable();
+    [[nodiscard]] const toml::table &GetTable() const;
+
+    [[nodiscard]] bool Contains(std::string_view key) const;
+    [[nodiscard]] size_t Size() const;
+
+  protected:
+    void ReadImpl() override;
+
+  private:
+    std::unique_ptr<toml::table> m_pTable;
 };
 
 } // namespace ae
