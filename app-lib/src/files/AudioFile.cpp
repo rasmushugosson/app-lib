@@ -4,8 +4,9 @@
 #include "stb_vorbis.h"
 
 #include <filesystem>
+#include <utility>
 
-ae::AudioFile::AudioFile() :  m_SampleRate(0), m_Channels(0), m_Samples(0) {}
+ae::AudioFile::AudioFile() : m_SampleRate(0), m_Channels(0), m_Samples(0) {}
 
 ae::AudioFile::AudioFile(const std::string &path) : File(path), m_SampleRate(0), m_Channels(0), m_Samples(0) {}
 
@@ -32,7 +33,7 @@ void ae::AudioFile::ReadImpl()
     int32_t read =
         stb_vorbis_get_samples_short_interleaved(pVorbis, static_cast<int>(m_Channels), m_Data.data(), samples);
 
-    if (read != static_cast<int32_t>(m_Samples))
+    if (std::cmp_not_equal(read ,m_Samples))
     {
         AE_THROW_RUNTIME_ERROR("Failed to load AudioFile, all samples could not be read");
     }
@@ -41,8 +42,7 @@ void ae::AudioFile::ReadImpl()
 }
 
 ae::AudioFileStream::AudioFileStream()
-    :  m_pVorbis(nullptr), m_SampleRate(0), m_Channels(0), m_Samples(0), m_ChunkSamples(4096),
-      m_EndReached(false)
+    : m_pVorbis(nullptr), m_SampleRate(0), m_Channels(0), m_Samples(0), m_ChunkSamples(4096), m_EndReached(false)
 {
 }
 

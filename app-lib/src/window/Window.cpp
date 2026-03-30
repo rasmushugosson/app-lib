@@ -235,7 +235,7 @@ ae::FrameInfo ae::Window::BeginFrame()
     {
         GL_CHECK(glClearColor(m_ClearColor[0], m_ClearColor[1], m_ClearColor[2], m_ClearColor[3]));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        return { 0, 0, m_Desc.width, m_Desc.height };
+        return { .imageIndex=0, .frameIndex=0, .width=m_Desc.width, .height=m_Desc.height };
     }
 
 #ifdef AE_VULKAN
@@ -647,7 +647,7 @@ ae::Vec2 ae::Window::GetPosition() const
     int x;
     int y;
     glfwGetWindowPos(m_pWindow, &x, &y);
-    return { .x=static_cast<float>(x), .y=static_cast<float>(y) };
+    return { .x = static_cast<float>(x), .y = static_cast<float>(y) };
 }
 
 void ae::Window::SetSize(uint32_t width, uint32_t height)
@@ -985,7 +985,6 @@ void ae::Window::CreateVulkan()
     }
 }
 #endif // AE_VULKAN
-
 
 void ae::Window::DestroyOpenGL()
 {

@@ -2,7 +2,7 @@
 
 #include "Files.h"
 
-ae::JsonFile::JsonFile() :  m_pJson(std::make_unique<nlohmann::json>()) {}
+ae::JsonFile::JsonFile() : m_pJson(std::make_unique<nlohmann::json>()) {}
 
 ae::JsonFile::JsonFile(const std::string &path) : TextFile(path), m_pJson(std::make_unique<nlohmann::json>()) {}
 

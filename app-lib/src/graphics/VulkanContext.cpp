@@ -2,19 +2,17 @@
 
 #ifdef AE_VULKAN
 
+#include "DearImGui.h"
 #include "VulkanContext.h"
+#include "backends/imgui_impl_vulkan.h"
 
 #include <algorithm>
 
-#include "DearImGui.h"
-
-#include "backends/imgui_impl_vulkan.h"
-
 ae::VulkanContext::VulkanContext(Window &window)
     : Context(window), m_FramesInFlight(0), m_Surface(VK_NULL_HANDLE), m_SwapChain(VK_NULL_HANDLE),
-      m_SwapChainImageFormat(VK_FORMAT_UNDEFINED), m_SwapChainExtent(),
-      m_ImGuiStandaloneRenderPass(VK_NULL_HANDLE), m_ImGuiOverlayRenderPass(VK_NULL_HANDLE),
-      m_CommandPool(VK_NULL_HANDLE), m_CurrentFrame(0), m_CurrentImageIndex(0), m_NeedsResize(false)
+      m_SwapChainImageFormat(VK_FORMAT_UNDEFINED), m_SwapChainExtent(), m_ImGuiStandaloneRenderPass(VK_NULL_HANDLE),
+      m_ImGuiOverlayRenderPass(VK_NULL_HANDLE), m_CommandPool(VK_NULL_HANDLE), m_CurrentFrame(0),
+      m_CurrentImageIndex(0), m_NeedsResize(false)
 {
 }
 
@@ -32,17 +30,15 @@ ae::FrameInfo ae::VulkanContext::BeginFrame()
 
     vkWaitForFences(device, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
 
-    VkResult result = vkAcquireNextImageKHR(device, m_SwapChain, UINT64_MAX,
-                                            m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE,
-                                            &m_CurrentImageIndex);
+    VkResult result = vkAcquireNextImageKHR(device, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame],
+                                            VK_NULL_HANDLE, &m_CurrentImageIndex);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
         RecreateSwapChain();
         // Retry acquire after recreation
-        result = vkAcquireNextImageKHR(device, m_SwapChain, UINT64_MAX,
-                                       m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE,
-                                       &m_CurrentImageIndex);
+        result = vkAcquireNextImageKHR(device, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame],
+                                       VK_NULL_HANDLE, &m_CurrentImageIndex);
     }
 
     if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -52,7 +48,10 @@ ae::FrameInfo ae::VulkanContext::BeginFrame()
 
     vkResetFences(device, 1, &m_InFlightFences[m_CurrentFrame]);
 
-    return { m_CurrentImageIndex, m_CurrentFrame, m_SwapChainExtent.width, m_SwapChainExtent.height };
+    return { .imageIndex = m_CurrentImageIndex,
+             .frameIndex = m_CurrentFrame,
+             .width = m_SwapChainExtent.width,
+             .height = m_SwapChainExtent.height };
 }
 
 void ae::VulkanContext::EndFrame(const VkCommandBuffer *appCommandBuffers, uint32_t appCBCount, bool hasImGui)
@@ -83,22 +82,22 @@ void ae::VulkanContext::EndFrame(const VkCommandBuffer *appCommandBuffers, uint3
 
     if (!allCBs.empty())
     {
-        VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[m_CurrentFrame] };
-        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_CurrentFrame] };
+        std::array<VkSemaphore, 1> waitSemaphores = { m_ImageAvailableSemaphores[m_CurrentFrame] };
+        std::array<VkPipelineStageFlags, 1> waitStages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        std::array<VkSemaphore, 1> signalSemaphores = { m_RenderFinishedSemaphores[m_CurrentFrame] };
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.pWaitSemaphores = waitSemaphores.data();
+        submitInfo.pWaitDstStageMask = waitStages.data();
         submitInfo.commandBufferCount = static_cast<uint32_t>(allCBs.size());
         submitInfo.pCommandBuffers = allCBs.data();
         submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
+        submitInfo.pSignalSemaphores = signalSemaphores.data();
 
-        if (vkQueueSubmit(VulkanManager::Get().GetGraphicsQueue(), 1, &submitInfo,
-                          m_InFlightFences[m_CurrentFrame]) != VK_SUCCESS)
+        if (vkQueueSubmit(VulkanManager::Get().GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame]) !=
+            VK_SUCCESS)
         {
             AE_THROW_RUNTIME_ERROR("Failed to submit Vulkan command buffers");
         }
@@ -141,7 +140,7 @@ VkCommandBuffer ae::VulkanContext::RecordImGuiOverlay()
     rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     rpInfo.renderPass = m_ImGuiOverlayRenderPass;
     rpInfo.framebuffer = m_ImGuiOverlayFramebuffers[m_CurrentImageIndex];
-    rpInfo.renderArea.offset = { 0, 0 };
+    rpInfo.renderArea.offset = { .x = 0, .y = 0 };
     rpInfo.renderArea.extent = m_SwapChainExtent;
     rpInfo.clearValueCount = 0;
     rpInfo.pClearValues = nullptr;
@@ -173,7 +172,7 @@ VkCommandBuffer ae::VulkanContext::RecordImGuiStandalone()
     rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     rpInfo.renderPass = m_ImGuiStandaloneRenderPass;
     rpInfo.framebuffer = m_ImGuiStandaloneFramebuffers[m_CurrentImageIndex];
-    rpInfo.renderArea.offset = { 0, 0 };
+    rpInfo.renderArea.offset = { .x = 0, .y = 0 };
     rpInfo.renderArea.extent = m_SwapChainExtent;
     rpInfo.clearValueCount = 1;
     rpInfo.pClearValues = &clearColor;
@@ -213,10 +212,8 @@ VkCommandBuffer ae::VulkanContext::RecordTransitionToPresent()
     barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     barrier.dstAccessMask = 0;
 
-    vkCmdPipelineBarrier(cmd,
-                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                         0, 0, nullptr, 0, nullptr, 1, &barrier);
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
+                         nullptr, 0, nullptr, 1, &barrier);
 
     VK_CHECK(vkEndCommandBuffer(cmd));
 
@@ -379,29 +376,33 @@ void ae::VulkanContext::CreateSwapChain()
         int height;
         glfwGetFramebufferSize(m_Window.GetWindow(), &width, &height);
 
-        m_SwapChainExtent.width = std::clamp((uint32_t)width, surfaceCapabilities.minImageExtent.width,
+        m_SwapChainExtent.width = std::clamp(static_cast<uint32_t>(width), surfaceCapabilities.minImageExtent.width,
                                              surfaceCapabilities.maxImageExtent.width);
 
-        m_SwapChainExtent.height = std::clamp((uint32_t)height, surfaceCapabilities.minImageExtent.height,
+        m_SwapChainExtent.height = std::clamp(static_cast<uint32_t>(height), surfaceCapabilities.minImageExtent.height,
                                               surfaceCapabilities.maxImageExtent.height);
     }
 
-    VkSwapchainCreateInfoKHR createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = m_Surface;
-    createInfo.minImageCount = imageCount;
-    createInfo.imageFormat = m_SwapChainImageFormat;
-    createInfo.imageColorSpace = chosenFormat.colorSpace;
-    createInfo.imageExtent = m_SwapChainExtent;
-    createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    createInfo.preTransform = surfaceCapabilities.currentTransform;
-    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    createInfo.presentMode = chosenPresentMode;
-    createInfo.clipped = VK_TRUE;
-    createInfo.oldSwapchain = VK_NULL_HANDLE;
+    VkSwapchainCreateInfoKHR createInfo{
+        .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .pNext = nullptr,
+        .flags = 0,
+        .surface = m_Surface,
+        .minImageCount = imageCount,
+        .imageFormat = m_SwapChainImageFormat,
+        .imageColorSpace = chosenFormat.colorSpace,
+        .imageExtent = m_SwapChainExtent,
+        .imageArrayLayers = 1,
+        .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0,
+        .pQueueFamilyIndices = nullptr,
+        .preTransform = surfaceCapabilities.currentTransform,
+        .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        .presentMode = chosenPresentMode,
+        .clipped = VK_TRUE,
+        .oldSwapchain = VK_NULL_HANDLE,
+    };
 
     if (vkCreateSwapchainKHR(VulkanManager::Get().GetDevice(), &createInfo, nullptr, &m_SwapChain) != VK_SUCCESS)
     {
@@ -463,15 +464,17 @@ void ae::VulkanContext::DestroySwapChainImageViews()
 
 void ae::VulkanContext::CreateImGuiStandaloneRenderPass()
 {
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = m_SwapChainImageFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    VkAttachmentDescription colorAttachment{
+        .flags = 0,
+        .format = m_SwapChainImageFormat,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    };
 
     VkAttachmentReference colorAttachmentRef{};
     colorAttachmentRef.attachment = 0;
@@ -499,8 +502,8 @@ void ae::VulkanContext::CreateImGuiStandaloneRenderPass()
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(VulkanManager::Get().GetDevice(), &renderPassInfo, nullptr,
-                           &m_ImGuiStandaloneRenderPass) != VK_SUCCESS)
+    if (vkCreateRenderPass(VulkanManager::Get().GetDevice(), &renderPassInfo, nullptr, &m_ImGuiStandaloneRenderPass) !=
+        VK_SUCCESS)
     {
         AE_THROW_RUNTIME_ERROR("Failed to create ImGui standalone render pass");
     }
@@ -514,15 +517,17 @@ void ae::VulkanContext::DestroyImGuiStandaloneRenderPass()
 
 void ae::VulkanContext::CreateImGuiOverlayRenderPass()
 {
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = m_SwapChainImageFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    VkAttachmentDescription colorAttachment{
+        .flags = 0,
+        .format = m_SwapChainImageFormat,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    };
 
     VkAttachmentReference colorAttachmentRef{};
     colorAttachmentRef.attachment = 0;
@@ -550,8 +555,8 @@ void ae::VulkanContext::CreateImGuiOverlayRenderPass()
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(VulkanManager::Get().GetDevice(), &renderPassInfo, nullptr,
-                           &m_ImGuiOverlayRenderPass) != VK_SUCCESS)
+    if (vkCreateRenderPass(VulkanManager::Get().GetDevice(), &renderPassInfo, nullptr, &m_ImGuiOverlayRenderPass) !=
+        VK_SUCCESS)
     {
         AE_THROW_RUNTIME_ERROR("Failed to create ImGui overlay render pass");
     }

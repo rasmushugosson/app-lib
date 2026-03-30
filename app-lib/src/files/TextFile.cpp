@@ -4,7 +4,7 @@
 
 #include <utility>
 
-ae::TextFile::TextFile()  = default;
+ae::TextFile::TextFile() = default;
 
 ae::TextFile::TextFile(const std::string &path) : File(path) {}
 

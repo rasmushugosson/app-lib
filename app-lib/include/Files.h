@@ -3,12 +3,12 @@
 #include "Log.h"
 
 #include <cstdio>
-#include <nlohmann/json.hpp>
-#include <toml.hpp>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <stdint.h>
 #include <string>
 #include <string_view>
+#include <toml.hpp>
 #include <type_traits>
 #include <vector>
 

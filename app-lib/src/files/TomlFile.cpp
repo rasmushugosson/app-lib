@@ -47,7 +47,7 @@ toml::node_view<const toml::node> ae::TomlFile::operator[](std::string_view key)
     }
 #endif // AE_DEBUG
 
-    return (*m_pTable)[key];
+    return std::as_const(*m_pTable)[key];
 }
 
 toml::table &ae::TomlFile::GetTable()

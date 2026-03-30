@@ -4,7 +4,7 @@
 
 #include <utility>
 
-ae::BinaryFile::BinaryFile()  = default;
+ae::BinaryFile::BinaryFile() = default;
 
 ae::BinaryFile::BinaryFile(const std::string &path) : File(path) {}
 
