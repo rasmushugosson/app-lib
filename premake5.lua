@@ -119,7 +119,8 @@ includedirs({
 	"vendor/imgui",
 	"vendor/nlohmann",
 	"vendor/lua",
-	"vendor/sol",  -- for <sol/sol.hpp>
+	"vendor/sol",
+	"vendor/toml++",
 })
 
 filter("system:windows")
