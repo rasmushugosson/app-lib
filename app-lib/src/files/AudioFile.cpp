@@ -33,7 +33,7 @@ void ae::AudioFile::ReadImpl()
     int32_t read =
         stb_vorbis_get_samples_short_interleaved(pVorbis, static_cast<int>(m_Channels), m_Data.data(), samples);
 
-    if (std::cmp_not_equal(read ,m_Samples))
+    if (std::cmp_not_equal(read, m_Samples))
     {
         AE_THROW_RUNTIME_ERROR("Failed to load AudioFile, all samples could not be read");
     }
