@@ -74,7 +74,7 @@ kind("Utility")
 language("C++")
 
 files({
-	vendor_dir .. "/nlohmann/**.hpp",
+	vendor_dir .. "/nlohmann/nlohmann/**.hpp",
 })
 
 includedirs({
@@ -114,7 +114,6 @@ files({
 })
 
 includedirs({
-	vendor_dir,
 	vendor_dir .. "/imgui",
 })
 
@@ -131,6 +130,47 @@ if vulkanAvailable then
 		includedirs({ vulkanSDKPath .. "/Include" })
 	end
 end
+
+-- Lua library
+project("Lua")
+kind("StaticLib")
+language("C")
+objdir("obj/%{prj.name}/%{cfg.buildcfg}")
+targetdir("bin/%{prj.name}/%{cfg.buildcfg}")
+
+files({
+	vendor_dir .. "/lua/*.c",
+	vendor_dir .. "/lua/*.h",
+})
+
+-- Exclude standalone interpreter and one-file build
+removefiles({
+	vendor_dir .. "/lua/lua.c",
+	vendor_dir .. "/lua/onelua.c",
+	vendor_dir .. "/lua/ltests.c",
+})
+
+includedirs({
+	vendor_dir .. "/lua",
+})
+
+filter("system:linux or system:macosx")
+defines({ "LUA_USE_POSIX" })
+filter({})
+
+-- Sol (header-only utility project)
+project("Sol")
+kind("Utility")
+language("C++")
+
+files({
+	vendor_dir .. "/sol/sol/**.hpp",
+})
+
+includedirs({
+	vendor_dir .. "/sol",  -- for <sol/sol.hpp>
+	vendor_dir .. "/lua",
+})
 
 project("App")
 kind("StaticLib")
@@ -156,13 +196,15 @@ includedirs({
 	vendor_dir .. "/stb",
 	vendor_dir .. "/imgui",
 	vendor_dir .. "/nlohmann",
+	vendor_dir .. "/lua",
+	vendor_dir .. "/sol",  -- for <sol/sol.hpp>
 })
 
 filter("system:windows")
 includedirs({ dep_dir .. "/GLFW/include" })
 filter({})
 
-dependson({ "GLM", "Nlohmann" })
+dependson({ "GLM", "Nlohmann", "Sol" })
 
 filter("system:windows")
 links({
@@ -170,6 +212,7 @@ links({
 	"opengl32.lib",
 	"Log",
 	"Event",
+	"Lua",
 	"STB",
 	"ImGui",
 	"GLAD",
@@ -188,6 +231,7 @@ links({
 	"openal",
 	"Log",
 	"Event",
+	"Lua",
 	"STB",
 	"ImGui",
 	"GLAD",
@@ -200,6 +244,7 @@ links({
 	"openal",
 	"Log",
 	"Event",
+	"Lua",
 	"STB",
 	"ImGui",
 	"GLAD",

@@ -118,13 +118,15 @@ includedirs({
 	"vendor/glm",
 	"vendor/imgui",
 	"vendor/nlohmann",
+	"vendor/lua",
+	"vendor/sol",  -- for <sol/sol.hpp>
 })
 
 filter("system:windows")
 includedirs({ "dep/GLFW/include" })
 filter({})
 
-dependson({ "GLM", "Nlohmann" })
+dependson({ "GLM", "Nlohmann", "Sol" })
 
 filter("system:windows")
 links({
@@ -132,6 +134,7 @@ links({
 	"opengl32.lib",
 	"Log",
 	"Event",
+	"Lua",
 	"STB",
 	"ImGui",
 	"GLAD",
@@ -153,6 +156,7 @@ postbuildcommands({
 filter("system:linux")
 links({
 	"App",
+	"Lua",
 	"ImGui",
 	"STB",
 	"GLAD",
@@ -166,6 +170,7 @@ links({
 filter("system:macosx")
 links({
 	"App",
+	"Lua",
 	"ImGui",
 	"STB",
 	"GLAD",
