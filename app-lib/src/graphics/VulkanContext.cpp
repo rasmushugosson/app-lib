@@ -84,7 +84,7 @@ void ae::VulkanContext::EndFrame(const VkCommandBuffer *appCommandBuffers, uint3
     {
         std::array<VkSemaphore, 1> waitSemaphores = { m_ImageAvailableSemaphores[m_CurrentFrame] };
         std::array<VkPipelineStageFlags, 1> waitStages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        std::array<VkSemaphore, 1> signalSemaphores = { m_RenderFinishedSemaphores[m_CurrentFrame] };
+        std::array<VkSemaphore, 1> signalSemaphores = { m_RenderFinishedSemaphores[m_CurrentImageIndex] };
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -107,7 +107,7 @@ void ae::VulkanContext::EndFrame(const VkCommandBuffer *appCommandBuffers, uint3
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &m_RenderFinishedSemaphores[m_CurrentFrame];
+    presentInfo.pWaitSemaphores = &m_RenderFinishedSemaphores[m_CurrentImageIndex];
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &m_SwapChain;
     presentInfo.pImageIndices = &m_CurrentImageIndex;
@@ -704,8 +704,10 @@ void ae::VulkanContext::DestroyCommandBuffers()
 
 void ae::VulkanContext::CreateSyncObjects()
 {
+    uint32_t imageCount = static_cast<uint32_t>(m_SwapChainImages.size());
+
     m_ImageAvailableSemaphores.resize(m_FramesInFlight);
-    m_RenderFinishedSemaphores.resize(m_FramesInFlight);
+    m_RenderFinishedSemaphores.resize(imageCount);
     m_InFlightFences.resize(m_FramesInFlight);
 
     VkSemaphoreCreateInfo semaphoreInfo{};
@@ -719,9 +721,16 @@ void ae::VulkanContext::CreateSyncObjects()
     {
         if (vkCreateSemaphore(VulkanManager::Get().GetDevice(), &semaphoreInfo, nullptr,
                               &m_ImageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(VulkanManager::Get().GetDevice(), &semaphoreInfo, nullptr,
-                              &m_RenderFinishedSemaphores[i]) != VK_SUCCESS ||
             vkCreateFence(VulkanManager::Get().GetDevice(), &fenceInfo, nullptr, &m_InFlightFences[i]) != VK_SUCCESS)
+        {
+            AE_THROW_RUNTIME_ERROR("Failed to create synchronization objects for Vulkan context");
+        }
+    }
+
+    for (uint32_t i = 0; i < imageCount; i++)
+    {
+        if (vkCreateSemaphore(VulkanManager::Get().GetDevice(), &semaphoreInfo, nullptr,
+                              &m_RenderFinishedSemaphores[i]) != VK_SUCCESS)
         {
             AE_THROW_RUNTIME_ERROR("Failed to create synchronization objects for Vulkan context");
         }
@@ -730,11 +739,19 @@ void ae::VulkanContext::CreateSyncObjects()
 
 void ae::VulkanContext::DestroySyncObjects()
 {
-    for (uint32_t i = 0; i < m_InFlightFences.size(); i++)
+    for (auto &m_ImageAvailableSemaphore : m_ImageAvailableSemaphores)
     {
-        vkDestroySemaphore(VulkanManager::Get().GetDevice(), m_ImageAvailableSemaphores[i], nullptr);
-        vkDestroySemaphore(VulkanManager::Get().GetDevice(), m_RenderFinishedSemaphores[i], nullptr);
-        vkDestroyFence(VulkanManager::Get().GetDevice(), m_InFlightFences[i], nullptr);
+        vkDestroySemaphore(VulkanManager::Get().GetDevice(), m_ImageAvailableSemaphore, nullptr);
+    }
+
+    for (auto &m_RenderFinishedSemaphore : m_RenderFinishedSemaphores)
+    {
+        vkDestroySemaphore(VulkanManager::Get().GetDevice(), m_RenderFinishedSemaphore, nullptr);
+    }
+
+    for (auto &m_InFlightFence : m_InFlightFences)
+    {
+        vkDestroyFence(VulkanManager::Get().GetDevice(), m_InFlightFence, nullptr);
     }
 
     m_ImageAvailableSemaphores.clear();

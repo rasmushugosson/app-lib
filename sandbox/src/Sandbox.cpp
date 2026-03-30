@@ -88,7 +88,8 @@ static void Demo()
         windowDesc.vsync = true;
         windowDesc.fps = 165; // Not actually used since vsync is enabled
         windowDesc.type = ae::WindowType::WINDOWED;
-        windowDesc.graphicsAPI = ae::GraphicsAPI::OPENGL;
+        windowDesc.graphicsAPI = ae::GraphicsAPI::VULKAN;
+        windowDesc.framesInFlight = 2; // Double buffering
 
         // We can now create a window with the descriptor
         ae::Window window(windowDesc);

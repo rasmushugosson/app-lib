@@ -235,7 +235,7 @@ ae::FrameInfo ae::Window::BeginFrame()
     {
         GL_CHECK(glClearColor(m_ClearColor[0], m_ClearColor[1], m_ClearColor[2], m_ClearColor[3]));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        return { .imageIndex=0, .frameIndex=0, .width=m_Desc.width, .height=m_Desc.height };
+        return { .imageIndex = 0, .frameIndex = 0, .width = m_Desc.width, .height = m_Desc.height };
     }
 
 #ifdef AE_VULKAN
