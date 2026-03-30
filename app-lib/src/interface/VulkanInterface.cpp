@@ -50,7 +50,7 @@ bool ae::VulkanInterface::CreateImpl()
     init_info.MinImageCount = 2;
     init_info.ImageCount = static_cast<uint32_t>(pVulkanContext->GetSwapChainImages().size());
     init_info.CheckVkResultFn = nullptr;
-    init_info.PipelineInfoMain.RenderPass = pVulkanContext->GetRenderPass();
+    init_info.PipelineInfoMain.RenderPass = pVulkanContext->GetImGuiStandaloneRenderPass();
 
     ImGui_ImplVulkan_Init(&init_info);
 
@@ -75,24 +75,8 @@ void ae::VulkanInterface::PrepareImpl()
 
 void ae::VulkanInterface::FinishImpl()
 {
-    std::shared_ptr<Context> pContext = m_Window.GetContext().lock();
-#ifdef AE_DEBUG
-    if (!pContext)
-    {
-        AE_THROW_RUNTIME_ERROR("Failed to create Vulkan interface, context is null");
-    }
-#endif // AE_DEBUG
-
-    std::shared_ptr<VulkanContext> pVulkanContext = std::dynamic_pointer_cast<VulkanContext>(pContext);
-
-#ifdef AE_DEBUG
-    if (!pVulkanContext)
-    {
-        AE_THROW_RUNTIME_ERROR("Failed to create Vulkan interface, context is not Vulkan");
-    }
-#endif // AE_DEBUG
-
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), pVulkanContext->GetCurrentCommandBuffer());
+    // ImGui draw data is consumed by VulkanContext::EndFrame via ImGui::GetDrawData()
+    // No command recording here — VulkanContext handles it with its own command buffer
 }
 
 void ae::VulkanInterface::CreateDescriptorPool()

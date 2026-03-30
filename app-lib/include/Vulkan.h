@@ -21,15 +21,10 @@ struct VulkanResources
     VkQueue graphicsQueue;
     uint32_t graphicsQueueFamilyIndex;
 
-    VkSurfaceKHR surface;
-    VkSwapchainKHR swapchain;
     VkFormat swapchainFormat;
     VkExtent2D swapchainExtent;
-    VkRenderPass renderPass;
-    VkCommandPool commandPool;
-
-    uint32_t currentFrameIndex;
-    uint32_t currentImageIndex;
+    uint32_t imageCount;
+    const VkImageView *swapchainImageViews;
 };
 
 uint32_t VulkanFindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);

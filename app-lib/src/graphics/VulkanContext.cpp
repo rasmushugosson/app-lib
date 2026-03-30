@@ -6,16 +6,21 @@
 
 #include <algorithm>
 
+#include "DearImGui.h"
+
+#include "backends/imgui_impl_vulkan.h"
+
 ae::VulkanContext::VulkanContext(Window &window)
-    : Context(window), m_Surface(VK_NULL_HANDLE), m_SwapChain(VK_NULL_HANDLE),
-      m_SwapChainImageFormat(VK_FORMAT_UNDEFINED), m_SwapChainExtent(), m_RenderPass(VK_NULL_HANDLE),
+    : Context(window), m_FramesInFlight(0), m_Surface(VK_NULL_HANDLE), m_SwapChain(VK_NULL_HANDLE),
+      m_SwapChainImageFormat(VK_FORMAT_UNDEFINED), m_SwapChainExtent(),
+      m_ImGuiStandaloneRenderPass(VK_NULL_HANDLE), m_ImGuiOverlayRenderPass(VK_NULL_HANDLE),
       m_CommandPool(VK_NULL_HANDLE), m_CurrentFrame(0), m_CurrentImageIndex(0), m_NeedsResize(false)
 {
 }
 
 ae::VulkanContext::~VulkanContext() = default;
 
-void ae::VulkanContext::WaitForPreviousFrame()
+ae::FrameInfo ae::VulkanContext::BeginFrame()
 {
     if (m_NeedsResize)
     {
@@ -23,91 +28,87 @@ void ae::VulkanContext::WaitForPreviousFrame()
         m_NeedsResize = false;
     }
 
-    vkWaitForFences(VulkanManager::Get().GetDevice(), 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
-}
+    VkDevice device = VulkanManager::Get().GetDevice();
 
-void ae::VulkanContext::AquireNextImage()
-{
-    // Acquire the next available image - use frame counter for the acquire semaphore
-    // The semaphore is safe to use because we waited for the fence in WaitForPreviousFrame
-    vkAcquireNextImageKHR(VulkanManager::Get().GetDevice(), m_SwapChain, UINT64_MAX,
-                          m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &m_CurrentImageIndex);
+    vkWaitForFences(device, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
 
-    // Reset the fence for this frame - we'll signal it when we submit
-    vkResetFences(VulkanManager::Get().GetDevice(), 1, &m_InFlightFences[m_CurrentFrame]);
-}
+    VkResult result = vkAcquireNextImageKHR(device, m_SwapChain, UINT64_MAX,
+                                            m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE,
+                                            &m_CurrentImageIndex);
 
-void ae::VulkanContext::ResetCommandBuffer()
-{
-    vkResetCommandBuffer(m_CommandBuffers[m_CurrentImageIndex], 0);
-
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    beginInfo.pInheritanceInfo = nullptr;
-    if (vkBeginCommandBuffer(m_CommandBuffers[m_CurrentImageIndex], &beginInfo) != VK_SUCCESS)
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
-        AE_THROW_RUNTIME_ERROR("Failed to begin recording command buffer");
+        RecreateSwapChain();
+        // Retry acquire after recreation
+        result = vkAcquireNextImageKHR(device, m_SwapChain, UINT64_MAX,
+                                       m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE,
+                                       &m_CurrentImageIndex);
     }
-}
 
-void ae::VulkanContext::BeginRenderPass()
-{
-    const auto &clearColorData = m_Window.GetClearColor();
-    VkClearValue clearColor = { { { clearColorData[0], clearColorData[1], clearColorData[2], clearColorData[3] } } };
-
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = m_RenderPass;
-    renderPassInfo.framebuffer = m_SwapChainFramebuffers[m_CurrentImageIndex];
-    renderPassInfo.renderArea.offset = { .x = 0, .y = 0 };
-    renderPassInfo.renderArea.extent = m_SwapChainExtent;
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
-
-    vkCmdBeginRenderPass(m_CommandBuffers[m_CurrentImageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
-
-void ae::VulkanContext::EndRenderPass()
-{
-    vkCmdEndRenderPass(m_CommandBuffers[m_CurrentImageIndex]);
-}
-
-void ae::VulkanContext::SubmitCommandBuffer()
-{
-    vkEndCommandBuffer(m_CommandBuffers[m_CurrentImageIndex]);
-
-    std::array<VkSemaphore, 1> waitSemaphores = { m_ImageAvailableSemaphores[m_CurrentFrame] };
-    std::array<VkPipelineStageFlags, 1> waitStages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-
-    std::array<VkSemaphore, 1> signalSemaphores = { m_RenderFinishedSemaphores[m_CurrentImageIndex] };
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores.data();
-    submitInfo.pWaitDstStageMask = waitStages.data();
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &m_CommandBuffers[m_CurrentImageIndex];
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores.data();
-
-    // Signal the fence for this frame so we know when we can reuse its acquire semaphore
-    if (vkQueueSubmit(VulkanManager::Get().GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame]) !=
-        VK_SUCCESS)
+    if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
     {
-        AE_THROW_RUNTIME_ERROR("Failed to submit Vulkan command buffer");
+        AE_THROW_RUNTIME_ERROR("Failed to acquire Vulkan swapchain image");
     }
+
+    vkResetFences(device, 1, &m_InFlightFences[m_CurrentFrame]);
+
+    return { m_CurrentImageIndex, m_CurrentFrame, m_SwapChainExtent.width, m_SwapChainExtent.height };
 }
 
-void ae::VulkanContext::PresentImage()
+void ae::VulkanContext::EndFrame(const VkCommandBuffer *appCommandBuffers, uint32_t appCBCount, bool hasImGui)
 {
+    std::vector<VkCommandBuffer> allCBs;
+    allCBs.reserve(appCBCount + 1);
+
+    if (appCBCount > 0)
+    {
+        allCBs.insert(allCBs.end(), appCommandBuffers, appCommandBuffers + appCBCount);
+    }
+
+    if (hasImGui)
+    {
+        if (appCBCount > 0)
+        {
+            allCBs.push_back(RecordImGuiOverlay());
+        }
+        else
+        {
+            allCBs.push_back(RecordImGuiStandalone());
+        }
+    }
+    else if (appCBCount > 0)
+    {
+        allCBs.push_back(RecordTransitionToPresent());
+    }
+
+    if (!allCBs.empty())
+    {
+        VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[m_CurrentFrame] };
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_CurrentFrame] };
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = static_cast<uint32_t>(allCBs.size());
+        submitInfo.pCommandBuffers = allCBs.data();
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+
+        if (vkQueueSubmit(VulkanManager::Get().GetGraphicsQueue(), 1, &submitInfo,
+                          m_InFlightFences[m_CurrentFrame]) != VK_SUCCESS)
+        {
+            AE_THROW_RUNTIME_ERROR("Failed to submit Vulkan command buffers");
+        }
+    }
+
+    // Present
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
-    // Wait on the render-finished semaphore for this specific image
-    presentInfo.pWaitSemaphores = &m_RenderFinishedSemaphores[m_CurrentImageIndex];
+    presentInfo.pWaitSemaphores = &m_RenderFinishedSemaphores[m_CurrentFrame];
     presentInfo.swapchainCount = 1;
     presentInfo.pSwapchains = &m_SwapChain;
     presentInfo.pImageIndices = &m_CurrentImageIndex;
@@ -116,22 +117,116 @@ void ae::VulkanContext::PresentImage()
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {
-        // Could be due to window resize
-        RecreateSwapChain();
+        m_NeedsResize = true;
     }
-
     else if (result != VK_SUCCESS)
     {
         AE_THROW_RUNTIME_ERROR("Failed to present Vulkan image");
     }
 
-    // Advance frame counter for acquire semaphore selection
-    m_CurrentFrame =
-        static_cast<uint32_t>((static_cast<size_t>(m_CurrentFrame) + 1) % m_ImageAvailableSemaphores.size());
+    m_CurrentFrame = (m_CurrentFrame + 1) % m_FramesInFlight;
+}
+
+VkCommandBuffer ae::VulkanContext::RecordImGuiOverlay()
+{
+    VkCommandBuffer cmd = m_ImGuiCommandBuffers[m_CurrentImageIndex];
+    vkResetCommandBuffer(cmd, 0);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    VK_CHECK(vkBeginCommandBuffer(cmd, &beginInfo));
+
+    VkRenderPassBeginInfo rpInfo{};
+    rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    rpInfo.renderPass = m_ImGuiOverlayRenderPass;
+    rpInfo.framebuffer = m_ImGuiOverlayFramebuffers[m_CurrentImageIndex];
+    rpInfo.renderArea.offset = { 0, 0 };
+    rpInfo.renderArea.extent = m_SwapChainExtent;
+    rpInfo.clearValueCount = 0;
+    rpInfo.pClearValues = nullptr;
+
+    vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+
+    vkCmdEndRenderPass(cmd);
+    VK_CHECK(vkEndCommandBuffer(cmd));
+
+    return cmd;
+}
+
+VkCommandBuffer ae::VulkanContext::RecordImGuiStandalone()
+{
+    VkCommandBuffer cmd = m_ImGuiCommandBuffers[m_CurrentImageIndex];
+    vkResetCommandBuffer(cmd, 0);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    VK_CHECK(vkBeginCommandBuffer(cmd, &beginInfo));
+
+    const auto &clearColorData = m_Window.GetClearColor();
+    VkClearValue clearColor = { { { clearColorData[0], clearColorData[1], clearColorData[2], clearColorData[3] } } };
+
+    VkRenderPassBeginInfo rpInfo{};
+    rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    rpInfo.renderPass = m_ImGuiStandaloneRenderPass;
+    rpInfo.framebuffer = m_ImGuiStandaloneFramebuffers[m_CurrentImageIndex];
+    rpInfo.renderArea.offset = { 0, 0 };
+    rpInfo.renderArea.extent = m_SwapChainExtent;
+    rpInfo.clearValueCount = 1;
+    rpInfo.pClearValues = &clearColor;
+
+    vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+
+    vkCmdEndRenderPass(cmd);
+    VK_CHECK(vkEndCommandBuffer(cmd));
+
+    return cmd;
+}
+
+VkCommandBuffer ae::VulkanContext::RecordTransitionToPresent()
+{
+    VkCommandBuffer cmd = m_TransitionCommandBuffers[m_CurrentImageIndex];
+    vkResetCommandBuffer(cmd, 0);
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    VK_CHECK(vkBeginCommandBuffer(cmd, &beginInfo));
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = m_SwapChainImages[m_CurrentImageIndex];
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    barrier.dstAccessMask = 0;
+
+    vkCmdPipelineBarrier(cmd,
+                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                         0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+    VK_CHECK(vkEndCommandBuffer(cmd));
+
+    return cmd;
 }
 
 bool ae::VulkanContext::CreateImpl()
 {
+    m_FramesInFlight = m_Window.GetDesc().framesInFlight;
+
     VulkanManager::Get().AddContext(m_Window.GetDesc().title);
 
     CreateSurface();
@@ -143,8 +238,10 @@ bool ae::VulkanContext::CreateImpl()
 
     CreateSwapChain();
     CreateSwapChainImageViews();
-    CreateRenderPass();
-    CreateFramebuffers();
+    CreateImGuiStandaloneRenderPass();
+    CreateImGuiOverlayRenderPass();
+    CreateImGuiStandaloneFramebuffers();
+    CreateImGuiOverlayFramebuffers();
     CreateCommandPool();
     CreateCommandBuffers();
     CreateSyncObjects();
@@ -154,12 +251,12 @@ bool ae::VulkanContext::CreateImpl()
 
 void ae::VulkanContext::ActivateImpl()
 {
-    // Does not need to by activated
+    // Does not need to be activated
 }
 
 void ae::VulkanContext::DeactivateImpl()
 {
-    // Does not need to by deactivated
+    // Does not need to be deactivated
 }
 
 void ae::VulkanContext::DestroyImpl()
@@ -177,8 +274,10 @@ void ae::VulkanContext::DestroyImpl()
     DestroySyncObjects();
     DestroyCommandBuffers();
     DestroyCommandPool();
-    DestroyFramebuffers();
-    DestroyRenderPass();
+    DestroyImGuiOverlayFramebuffers();
+    DestroyImGuiStandaloneFramebuffers();
+    DestroyImGuiOverlayRenderPass();
+    DestroyImGuiStandaloneRenderPass();
     DestroySwapChainImageViews();
     DestroySwapChain();
 
@@ -362,7 +461,7 @@ void ae::VulkanContext::DestroySwapChainImageViews()
     m_SwapChainImageViews.clear();
 }
 
-void ae::VulkanContext::CreateRenderPass()
+void ae::VulkanContext::CreateImGuiStandaloneRenderPass()
 {
     VkAttachmentDescription colorAttachment{};
     colorAttachment.format = m_SwapChainImageFormat;
@@ -383,29 +482,90 @@ void ae::VulkanContext::CreateRenderPass()
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
 
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &colorAttachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(VulkanManager::Get().GetDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS)
+    if (vkCreateRenderPass(VulkanManager::Get().GetDevice(), &renderPassInfo, nullptr,
+                           &m_ImGuiStandaloneRenderPass) != VK_SUCCESS)
     {
-        AE_THROW_RUNTIME_ERROR("Failed to create render pass for Vulkan context");
+        AE_THROW_RUNTIME_ERROR("Failed to create ImGui standalone render pass");
     }
 }
 
-void ae::VulkanContext::DestroyRenderPass()
+void ae::VulkanContext::DestroyImGuiStandaloneRenderPass()
 {
-    vkDestroyRenderPass(VulkanManager::Get().GetDevice(), m_RenderPass, nullptr);
-
-    m_RenderPass = VK_NULL_HANDLE;
+    vkDestroyRenderPass(VulkanManager::Get().GetDevice(), m_ImGuiStandaloneRenderPass, nullptr);
+    m_ImGuiStandaloneRenderPass = VK_NULL_HANDLE;
 }
 
-void ae::VulkanContext::CreateFramebuffers()
+void ae::VulkanContext::CreateImGuiOverlayRenderPass()
 {
-    m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = m_SwapChainImageFormat;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    if (vkCreateRenderPass(VulkanManager::Get().GetDevice(), &renderPassInfo, nullptr,
+                           &m_ImGuiOverlayRenderPass) != VK_SUCCESS)
+    {
+        AE_THROW_RUNTIME_ERROR("Failed to create ImGui overlay render pass");
+    }
+}
+
+void ae::VulkanContext::DestroyImGuiOverlayRenderPass()
+{
+    vkDestroyRenderPass(VulkanManager::Get().GetDevice(), m_ImGuiOverlayRenderPass, nullptr);
+    m_ImGuiOverlayRenderPass = VK_NULL_HANDLE;
+}
+
+void ae::VulkanContext::CreateImGuiStandaloneFramebuffers()
+{
+    m_ImGuiStandaloneFramebuffers.resize(m_SwapChainImageViews.size());
 
     for (size_t i = 0; i < m_SwapChainImageViews.size(); i++)
     {
@@ -413,7 +573,7 @@ void ae::VulkanContext::CreateFramebuffers()
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = m_RenderPass;
+        framebufferInfo.renderPass = m_ImGuiStandaloneRenderPass;
         framebufferInfo.attachmentCount = 1;
         framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = m_SwapChainExtent.width;
@@ -421,21 +581,54 @@ void ae::VulkanContext::CreateFramebuffers()
         framebufferInfo.layers = 1;
 
         if (vkCreateFramebuffer(VulkanManager::Get().GetDevice(), &framebufferInfo, nullptr,
-                                &m_SwapChainFramebuffers[i]) != VK_SUCCESS)
+                                &m_ImGuiStandaloneFramebuffers[i]) != VK_SUCCESS)
         {
-            AE_THROW_RUNTIME_ERROR("Failed to create framebuffer for Vulkan context");
+            AE_THROW_RUNTIME_ERROR("Failed to create ImGui standalone framebuffer");
         }
     }
 }
 
-void ae::VulkanContext::DestroyFramebuffers()
+void ae::VulkanContext::DestroyImGuiStandaloneFramebuffers()
 {
-    for (auto *framebuffer : m_SwapChainFramebuffers)
+    for (auto *framebuffer : m_ImGuiStandaloneFramebuffers)
     {
         vkDestroyFramebuffer(VulkanManager::Get().GetDevice(), framebuffer, nullptr);
     }
+    m_ImGuiStandaloneFramebuffers.clear();
+}
 
-    m_SwapChainFramebuffers.clear();
+void ae::VulkanContext::CreateImGuiOverlayFramebuffers()
+{
+    m_ImGuiOverlayFramebuffers.resize(m_SwapChainImageViews.size());
+
+    for (size_t i = 0; i < m_SwapChainImageViews.size(); i++)
+    {
+        std::array<VkImageView, 1> attachments = { m_SwapChainImageViews[i] };
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = m_ImGuiOverlayRenderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments.data();
+        framebufferInfo.width = m_SwapChainExtent.width;
+        framebufferInfo.height = m_SwapChainExtent.height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(VulkanManager::Get().GetDevice(), &framebufferInfo, nullptr,
+                                &m_ImGuiOverlayFramebuffers[i]) != VK_SUCCESS)
+        {
+            AE_THROW_RUNTIME_ERROR("Failed to create ImGui overlay framebuffer");
+        }
+    }
+}
+
+void ae::VulkanContext::DestroyImGuiOverlayFramebuffers()
+{
+    for (auto *framebuffer : m_ImGuiOverlayFramebuffers)
+    {
+        vkDestroyFramebuffer(VulkanManager::Get().GetDevice(), framebuffer, nullptr);
+    }
+    m_ImGuiOverlayFramebuffers.clear();
 }
 
 void ae::VulkanContext::CreateCommandPool()
@@ -454,42 +647,61 @@ void ae::VulkanContext::CreateCommandPool()
 void ae::VulkanContext::DestroyCommandPool()
 {
     vkDestroyCommandPool(VulkanManager::Get().GetDevice(), m_CommandPool, nullptr);
-
     m_CommandPool = VK_NULL_HANDLE;
 }
 
 void ae::VulkanContext::CreateCommandBuffers()
 {
-    m_CommandBuffers.resize(m_SwapChainFramebuffers.size());
+    size_t imageCount = m_SwapChainImages.size();
 
+    // ImGui command buffers (one per swapchain image)
+    m_ImGuiCommandBuffers.resize(imageCount);
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = m_CommandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t)m_CommandBuffers.size();
+    allocInfo.commandBufferCount = static_cast<uint32_t>(imageCount);
 
-    if (vkAllocateCommandBuffers(VulkanManager::Get().GetDevice(), &allocInfo, m_CommandBuffers.data()) != VK_SUCCESS)
+    if (vkAllocateCommandBuffers(VulkanManager::Get().GetDevice(), &allocInfo, m_ImGuiCommandBuffers.data()) !=
+        VK_SUCCESS)
     {
-        AE_THROW_RUNTIME_ERROR("Failed to allocate command buffers for Vulkan context");
+        AE_THROW_RUNTIME_ERROR("Failed to allocate ImGui command buffers");
+    }
+
+    // Transition command buffers (one per swapchain image)
+    m_TransitionCommandBuffers.resize(imageCount);
+    allocInfo.commandBufferCount = static_cast<uint32_t>(imageCount);
+
+    if (vkAllocateCommandBuffers(VulkanManager::Get().GetDevice(), &allocInfo, m_TransitionCommandBuffers.data()) !=
+        VK_SUCCESS)
+    {
+        AE_THROW_RUNTIME_ERROR("Failed to allocate transition command buffers");
     }
 }
 
 void ae::VulkanContext::DestroyCommandBuffers()
 {
-    vkFreeCommandBuffers(VulkanManager::Get().GetDevice(), m_CommandPool, (uint32_t)m_CommandBuffers.size(),
-                         m_CommandBuffers.data());
+    if (!m_ImGuiCommandBuffers.empty())
+    {
+        vkFreeCommandBuffers(VulkanManager::Get().GetDevice(), m_CommandPool,
+                             static_cast<uint32_t>(m_ImGuiCommandBuffers.size()), m_ImGuiCommandBuffers.data());
+        m_ImGuiCommandBuffers.clear();
+    }
 
-    m_CommandBuffers.clear();
+    if (!m_TransitionCommandBuffers.empty())
+    {
+        vkFreeCommandBuffers(VulkanManager::Get().GetDevice(), m_CommandPool,
+                             static_cast<uint32_t>(m_TransitionCommandBuffers.size()),
+                             m_TransitionCommandBuffers.data());
+        m_TransitionCommandBuffers.clear();
+    }
 }
 
 void ae::VulkanContext::CreateSyncObjects()
 {
-    // Create one set of sync objects per swapchain image to avoid semaphore reuse issues
-    // See: https://docs.vulkan.org/guide/latest/swapchain_semaphore_reuse.html
-    size_t imageCount = m_SwapChainImages.size();
-    m_ImageAvailableSemaphores.resize(imageCount);
-    m_RenderFinishedSemaphores.resize(imageCount);
-    m_InFlightFences.resize(imageCount);
+    m_ImageAvailableSemaphores.resize(m_FramesInFlight);
+    m_RenderFinishedSemaphores.resize(m_FramesInFlight);
+    m_InFlightFences.resize(m_FramesInFlight);
 
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -498,7 +710,7 @@ void ae::VulkanContext::CreateSyncObjects()
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    for (size_t i = 0; i < imageCount; i++)
+    for (uint32_t i = 0; i < m_FramesInFlight; i++)
     {
         if (vkCreateSemaphore(VulkanManager::Get().GetDevice(), &semaphoreInfo, nullptr,
                               &m_ImageAvailableSemaphores[i]) != VK_SUCCESS ||
@@ -506,14 +718,14 @@ void ae::VulkanContext::CreateSyncObjects()
                               &m_RenderFinishedSemaphores[i]) != VK_SUCCESS ||
             vkCreateFence(VulkanManager::Get().GetDevice(), &fenceInfo, nullptr, &m_InFlightFences[i]) != VK_SUCCESS)
         {
-            AE_THROW_RUNTIME_ERROR("Failed to create semaphores or fences for Vulkan context");
+            AE_THROW_RUNTIME_ERROR("Failed to create synchronization objects for Vulkan context");
         }
     }
 }
 
 void ae::VulkanContext::DestroySyncObjects()
 {
-    for (size_t i = 0; i < m_ImageAvailableSemaphores.size(); i++)
+    for (uint32_t i = 0; i < m_InFlightFences.size(); i++)
     {
         vkDestroySemaphore(VulkanManager::Get().GetDevice(), m_ImageAvailableSemaphores[i], nullptr);
         vkDestroySemaphore(VulkanManager::Get().GetDevice(), m_RenderFinishedSemaphores[i], nullptr);
@@ -531,19 +743,28 @@ void ae::VulkanContext::RecreateSwapChain()
 
     DestroySyncObjects();
     DestroyCommandBuffers();
-    DestroyFramebuffers();
-    DestroyRenderPass();
+    DestroyImGuiOverlayFramebuffers();
+    DestroyImGuiStandaloneFramebuffers();
+    DestroyImGuiOverlayRenderPass();
+    DestroyImGuiStandaloneRenderPass();
     DestroySwapChainImageViews();
     DestroySwapChain();
 
     CreateSwapChain();
     CreateSwapChainImageViews();
-    CreateRenderPass();
-    CreateFramebuffers();
+    CreateImGuiStandaloneRenderPass();
+    CreateImGuiOverlayRenderPass();
+    CreateImGuiStandaloneFramebuffers();
+    CreateImGuiOverlayFramebuffers();
     CreateCommandBuffers();
     CreateSyncObjects();
 
     m_CurrentFrame = 0;
+
+    if (m_OnSwapchainRecreated)
+    {
+        m_OnSwapchainRecreated(GetVulkanResources());
+    }
 }
 
 void ae::VulkanContext::OnResize(uint32_t width, uint32_t height)
@@ -556,6 +777,11 @@ void ae::VulkanContext::OnResize(uint32_t width, uint32_t height)
     m_NeedsResize = true;
 }
 
+void ae::VulkanContext::SetOnSwapchainRecreatedCB(const std::function<void(const VulkanResources &)> &cb)
+{
+    m_OnSwapchainRecreated = cb;
+}
+
 ae::VulkanResources ae::VulkanContext::GetVulkanResources() const
 {
     VulkanResources resources{};
@@ -565,15 +791,10 @@ ae::VulkanResources ae::VulkanContext::GetVulkanResources() const
     resources.graphicsQueue = ae::VulkanManager::Get().GetGraphicsQueue();
     resources.graphicsQueueFamilyIndex = ae::VulkanManager::Get().GetGraphicsQueueFamilyIndex();
 
-    resources.surface = m_Surface;
-    resources.swapchain = m_SwapChain;
     resources.swapchainFormat = m_SwapChainImageFormat;
     resources.swapchainExtent = m_SwapChainExtent;
-    resources.renderPass = m_RenderPass;
-    resources.commandPool = m_CommandPool;
-
-    resources.currentFrameIndex = m_CurrentFrame;
-    resources.currentImageIndex = m_CurrentImageIndex;
+    resources.imageCount = static_cast<uint32_t>(m_SwapChainImages.size());
+    resources.swapchainImageViews = m_SwapChainImageViews.data();
 
     return resources;
 }

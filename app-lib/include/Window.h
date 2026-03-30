@@ -44,30 +44,31 @@ struct WindowDesc
     uint8_t monitor;
     bool vsync;
     uint32_t fps;
+    uint32_t framesInFlight;
     WindowType type;
     GraphicsAPI graphicsAPI;
 
     constexpr WindowDesc()
         : title("Untitled"), width(1280), height(720), resizable(true), minimizable(true), minimized(false),
-          maximizable(true), maximized(false), monitor(0), vsync(true), fps(60), type(WindowType::WINDOWED),
-          graphicsAPI(GraphicsAPI::OPENGL)
+          maximizable(true), maximized(false), monitor(0), vsync(true), fps(60), framesInFlight(2),
+          type(WindowType::WINDOWED), graphicsAPI(GraphicsAPI::OPENGL)
     {
     }
 
     WindowDesc(std::string_view title, uint32_t width, uint32_t height, bool resizable, bool minimizable,
                bool minimized, bool maximizable, bool maximized, uint8_t monitor, bool vsync, uint32_t fps,
-               WindowType type, GraphicsAPI graphicsAPI)
+               uint32_t framesInFlight, WindowType type, GraphicsAPI graphicsAPI)
         : title(title), width(width), height(height), resizable(resizable), minimizable(minimizable),
           minimized(minimized), maximizable(maximizable), maximized(maximized), monitor(monitor), vsync(vsync),
-          fps(fps), type(type), graphicsAPI(graphicsAPI)
+          fps(fps), framesInFlight(framesInFlight), type(type), graphicsAPI(graphicsAPI)
     {
     }
 
     WindowDesc(std::string_view title, uint32_t width, uint32_t height, uint8_t monitor, bool vsync, uint32_t fps,
-               WindowType type, GraphicsAPI graphicsAPI)
+               uint32_t framesInFlight, WindowType type, GraphicsAPI graphicsAPI)
         : title(title), width(width), height(height), resizable(false), minimizable(false), minimized(false),
-          maximizable(false), maximized(false), monitor(monitor), vsync(vsync), fps(fps), type(type),
-          graphicsAPI(graphicsAPI)
+          maximizable(false), maximized(false), monitor(monitor), vsync(vsync), fps(fps),
+          framesInFlight(framesInFlight), type(type), graphicsAPI(graphicsAPI)
     {
     }
 };
@@ -692,6 +693,14 @@ class Cursor
     int32_t m_YHot;
 };
 
+struct FrameInfo
+{
+    uint32_t imageIndex;
+    uint32_t frameIndex;
+    uint32_t width;
+    uint32_t height;
+};
+
 class Window;
 
 class Context
@@ -767,8 +776,12 @@ class Window
     void Create();
     void Destroy();
 
-    void Clear() const;
-    void Update();
+    FrameInfo BeginFrame();
+    void EndFrame();
+#ifdef AE_VULKAN
+    void EndFrame(std::initializer_list<VkCommandBuffer> commandBuffers);
+    void SetOnSwapchainRecreatedCB(const std::function<void(const VulkanResources &)> &cb);
+#endif
 
     void Close();
     bool ShouldClose() const;
@@ -1201,10 +1214,12 @@ class Window
     void CreateVulkan();
 #endif // AE_VULKAN
 
-    void UpdateOpenGL();
+    void EndFrameOpenGL();
 #ifdef AE_VULKAN
-    void UpdateVulkan();
+    void EndFrameVulkan(const VkCommandBuffer *commandBuffers, uint32_t count);
 #endif // AE_VULKAN
+
+    void HandleFrameTiming();
 
     void DestroyOpenGL();
 #ifdef AE_VULKAN
@@ -1311,6 +1326,11 @@ class Window
     bool m_Focused;
     bool m_Active;
     bool m_Created;
+    bool m_FrameInProgress = false;
+
+#ifdef AE_VULKAN
+    std::function<void(const VulkanResources &)> m_OnSwapchainRecreated = nullptr;
+#endif
 
     friend class WindowManager;
 };

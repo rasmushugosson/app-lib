@@ -2,6 +2,7 @@
 
 #ifdef AE_VULKAN
 
+#include <functional>
 #include <vector>
 
 #include "Vulkan.h"
@@ -19,13 +20,8 @@ namespace ae
 		VulkanContext& operator=(const VulkanContext&) = delete;
 		~VulkanContext();
 
-		void WaitForPreviousFrame();
-		void AquireNextImage();
-		void ResetCommandBuffer();
-		void BeginRenderPass();
-		void EndRenderPass();
-		void SubmitCommandBuffer();
-		void PresentImage();
+		FrameInfo BeginFrame();
+		void EndFrame(const VkCommandBuffer* appCommandBuffers, uint32_t appCBCount, bool hasImGui);
 
 		inline VkInstance GetInstance() const { return ae::VulkanManager::Get().GetInstance(); }
 		inline VkPhysicalDevice GetPhysicalDevice() const { return ae::VulkanManager::Get().GetPhysicalDevice(); }
@@ -34,29 +30,16 @@ namespace ae
 		inline uint32_t GetGraphicsQueueFamilyIndex() const { return ae::VulkanManager::Get().GetGraphicsQueueFamilyIndex(); }
 
 		inline VkSurfaceKHR GetSurface() const { return m_Surface; }
-
 		inline VkSwapchainKHR GetSwapChain() const { return m_SwapChain; }
 		inline VkFormat GetSwapChainImageFormat() const { return m_SwapChainImageFormat; }
 		inline VkExtent2D GetSwapChainExtent() const { return m_SwapChainExtent; }
-
 		inline const std::vector<VkImage>& GetSwapChainImages() const { return m_SwapChainImages; }
 		inline const std::vector<VkImageView>& GetSwapChainImageViews() const { return m_SwapChainImageViews; }
 
-		inline VkRenderPass GetRenderPass() const { return m_RenderPass; }
-		inline const std::vector<VkFramebuffer>& GetSwapChainFramebuffers() const { return m_SwapChainFramebuffers; }
-
+		inline VkRenderPass GetImGuiStandaloneRenderPass() const { return m_ImGuiStandaloneRenderPass; }
 		inline VkCommandPool GetCommandPool() const { return m_CommandPool; }
 
-		inline const std::vector<VkCommandBuffer>& GetCommandBuffers() const { return m_CommandBuffers; }
-		inline const std::vector<VkSemaphore>& GetImageAvailableSemaphores() const { return m_ImageAvailableSemaphores; }
-		inline const std::vector<VkSemaphore>& GetRenderFinishedSemaphores() const { return m_RenderFinishedSemaphores; }
-		inline const std::vector<VkFence>& GetInFlightFences() const { return m_InFlightFences; }
-
-		inline VkCommandBuffer GetCurrentCommandBuffer() const { return m_CommandBuffers[m_CurrentImageIndex]; }
-		inline VkCommandBuffer GetCommandBuffer(uint32_t index) const { return m_CommandBuffers[index]; }
-		inline VkSemaphore GetImageAvailableSemaphore(uint32_t index) const { return m_ImageAvailableSemaphores[index]; }
-		inline VkSemaphore GetRenderFinishedSemaphore(uint32_t index) const { return m_RenderFinishedSemaphores[index]; }
-		inline VkFence GetInFlightFence(uint32_t index) const { return m_InFlightFences[index]; }
+		void SetOnSwapchainRecreatedCB(const std::function<void(const VulkanResources&)>& cb);
 
 		VulkanResources GetVulkanResources() const override;
 	protected:
@@ -75,13 +58,19 @@ namespace ae
 		void CreateSwapChainImageViews();
 		void DestroySwapChainImageViews();
 
-		void CreateRenderPass();	
-		void DestroyRenderPass();
+		void CreateImGuiStandaloneRenderPass();
+		void DestroyImGuiStandaloneRenderPass();
 
-		void CreateFramebuffers();
-		void DestroyFramebuffers();	
+		void CreateImGuiOverlayRenderPass();
+		void DestroyImGuiOverlayRenderPass();
 
-		void CreateCommandPool();	
+		void CreateImGuiStandaloneFramebuffers();
+		void DestroyImGuiStandaloneFramebuffers();
+
+		void CreateImGuiOverlayFramebuffers();
+		void DestroyImGuiOverlayFramebuffers();
+
+		void CreateCommandPool();
 		void DestroyCommandPool();
 
 		void CreateCommandBuffers();
@@ -91,7 +80,13 @@ namespace ae
 		void DestroySyncObjects();
 
 		void RecreateSwapChain();
+
+		VkCommandBuffer RecordImGuiOverlay();
+		VkCommandBuffer RecordImGuiStandalone();
+		VkCommandBuffer RecordTransitionToPresent();
 	private:
+		uint32_t m_FramesInFlight;
+
 		VkSurfaceKHR m_Surface;
 
 		VkSwapchainKHR m_SwapChain;
@@ -101,12 +96,17 @@ namespace ae
 		std::vector<VkImage> m_SwapChainImages;
 		std::vector<VkImageView> m_SwapChainImageViews;
 
-		VkRenderPass m_RenderPass;
-		std::vector<VkFramebuffer> m_SwapChainFramebuffers;
+		VkRenderPass m_ImGuiStandaloneRenderPass;
+		VkRenderPass m_ImGuiOverlayRenderPass;
+
+		std::vector<VkFramebuffer> m_ImGuiStandaloneFramebuffers;
+		std::vector<VkFramebuffer> m_ImGuiOverlayFramebuffers;
 
 		VkCommandPool m_CommandPool;
 
-		std::vector<VkCommandBuffer> m_CommandBuffers; // One CB per swapchain image
+		std::vector<VkCommandBuffer> m_ImGuiCommandBuffers;
+		std::vector<VkCommandBuffer> m_TransitionCommandBuffers;
+
 		std::vector<VkSemaphore> m_ImageAvailableSemaphores;
 		std::vector<VkSemaphore> m_RenderFinishedSemaphores;
 		std::vector<VkFence> m_InFlightFences;
@@ -114,6 +114,8 @@ namespace ae
 		uint32_t m_CurrentFrame;
 		uint32_t m_CurrentImageIndex;
 		bool m_NeedsResize;
+
+		std::function<void(const VulkanResources&)> m_OnSwapchainRecreated;
 	};
 }
 

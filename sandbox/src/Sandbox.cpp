@@ -122,11 +122,11 @@ static void Demo()
 
             // We can then update the window each frame
             window.SetActive();
-            window.Clear();
+            window.BeginFrame();
 
             // Render things
 
-            window.Update();
+            window.EndFrame();
         }
 
         s_pWindow = nullptr;

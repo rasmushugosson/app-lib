@@ -2,14 +2,15 @@
 
 ## General
 
-This library combines eleven well-known APIs and libraries with additional wrapper and utility functionality. The aim of this library is to cover the basic boilerplate code required to use them together for graphics applications. The library is built using [Premake5](https://premake.github.io/) for `C++23`.
+This library combines thirteen well-known APIs and libraries with additional wrapper and utility functionality. The aim of this library is to cover the basic boilerplate code required to use them together for graphics applications. The library is built using [Premake5](https://premake.github.io/) for `C++23`.
 
 The APIs and libraries used are:
 [OpenGL](https://www.opengl.org/), [GLFW](https://github.com/glfw/glfw), [GLAD](https://glad.dav1d.de/),
 [Vulkan](https://www.vulkan.org/), [STB_Image](https://github.com/nothings/stb/blob/master/stb_image.h),
 [STB_Image_Write](https://github.com/nothings/stb/blob/master/stb_image_write.h),
 [STB_Vorbis](https://github.com/nothings/stb/blob/master/stb_vorbis.c),
-[Dear ImGui](https://github.com/ocornut/imgui), [OpenAL Soft](https://github.com/kcat/openal-soft), [GLM](https://github.com/g-truc/glm) and [nlohmann/json](https://github.com/nlohmann/json).
+[Dear ImGui](https://github.com/ocornut/imgui), [OpenAL Soft](https://github.com/kcat/openal-soft), [GLM](https://github.com/g-truc/glm), [nlohmann/json](https://github.com/nlohmann/json),
+[Lua](https://www.lua.org/) and [sol3](https://github.com/ThePhD/sol2).
 
 This library depends on the following libraries, included as git submodules:
 - [log-lib](https://github.com/rasmushugosson/log-lib) - Logging, exceptions and timing utilities
@@ -106,9 +107,11 @@ project("YourProject")
         "path/to/app-lib/app-lib/include",
         "path/to/app-lib/vendor/glm",
         "path/to/app-lib/vendor/imgui",
-        "path/to/app-lib/vendor/nlohmann"
+        "path/to/app-lib/vendor/nlohmann",
+        "path/to/app-lib/vendor/lua",
+        "path/to/app-lib/vendor/sol" 
     })
-    links({ "App", "ImGui", "STB", "GLAD", "Event", "Log" })
+    links({ "App", "Lua", "ImGui", "STB", "GLAD", "Event", "Log" })
 ```
 
 The `app-project.lua` file defines the App project and automatically includes the Log project, Event project, and vendor dependencies. The `premake5.lua` is used for standalone builds including the Sandbox example.
@@ -139,19 +142,20 @@ enum class GraphicsAPI
 
 struct WindowDesc
 {
-    std::string title;       // The title of the window
-    uint32_t width;          // The width of the window in pixels
-    uint32_t height;         // The height of the window in pixels
-    bool resizable;          // Whether the window is resizable
-    bool minimizable;        // Whether the window can be minimized
-    bool minimized;          // Whether the window is minimized
-    bool maximizable;        // Whether the window can be maximized
-    bool maximized;          // Whether the window is maximized
-    uint8_t monitor;         // The monitor on which the window should be displayed
-    bool vsync;              // Whether vsync is enabled
-    uint32_t fps;            // The target frames per second if vsync is disabled
-    WindowType type;         // The type of graphics app should be created
-    GraphicsAPI graphicsAPI; // The graphics API to create a context for
+    std::string title;         // The title of the window
+    uint32_t width;            // The width of the window in pixels
+    uint32_t height;           // The height of the window in pixels
+    bool resizable;            // Whether the window is resizable
+    bool minimizable;          // Whether the window can be minimized
+    bool minimized;            // Whether the window is minimized
+    bool maximizable;          // Whether the window can be maximized
+    bool maximized;            // Whether the window is maximized
+    uint8_t monitor;           // The monitor on which the window should be displayed
+    bool vsync;                // Whether vsync is enabled
+    uint32_t fps;              // The target frames per second if vsync is disabled
+    WindowType type;           // The type of graphics app should be created
+    GraphicsAPI graphicsAPI;   // The graphics API to create a context for
+    uint32_t framesInFlight;   // Number of frames in flight: 1-3 (Vulkan only, clamped to 1 for OpenGL)
 };
 ```
 
@@ -166,7 +170,7 @@ window.SetLayerStack(&layerStack);
 
 ### Additional Header Files
 
-The other header files in the `app-lib/include` folder contain utility classes and functions. `Files.h` contains wrappers around [STB](https://github.com/nothings/stb) for reading and writing image and audio files, as well as a `JsonFile` class that wraps [nlohmann/json](https://github.com/nlohmann/json) for convenient JSON file handling. The `OpenGL.h`, `Vulkan.h` and `OpenAL.h` header files each contain macros that check and throw custom exceptions for the respective API calls. The `DearImGui.h` and `OpenGLMaths.h` headers provide the third-party library interfaces.
+The other header files in the `app-lib/include` folder contain utility classes and functions. `Files.h` contains wrappers around [STB](https://github.com/nothings/stb) for reading and writing image and audio files, as well as a `JsonFile` class that wraps [nlohmann/json](https://github.com/nlohmann/json) for convenient JSON file handling. The `OpenGL.h`, `Vulkan.h` and `OpenAL.h` header files each contain macros that check and throw custom exceptions for the respective API calls. The `DearImGui.h` and `OpenGLMaths.h` headers provide the Dear ImGui and GLM interfaces. The `Lua.h` header exposes the full [sol3](https://github.com/ThePhD/sol2) C++ binding API on top of the bundled [Lua](https://www.lua.org/) runtime.
 
 ### Build Configurations
 
@@ -199,6 +203,8 @@ All third-party libraries included as source code have been modified to work wit
 | Dear ImGui | Source | `vendor/imgui` | MIT |
 | GLM | Header-only | `vendor/glm` | MIT |
 | nlohmann/json | Header-only | `vendor/nlohmann` | MIT |
+| Lua | Source | `vendor/lua` | MIT |
+| sol3 | Header-only | `vendor/sol` | MIT |
 
 ### System Libraries (not bundled)
 

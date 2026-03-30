@@ -66,6 +66,24 @@ void ae::Window::Create()
 
     ae::WindowManager::Get().EnsureInitialized();
 
+    // Validate framesInFlight
+    if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
+    {
+        if (m_Desc.framesInFlight != 1)
+        {
+            AE_LOG(AE_WARNING, "framesInFlight is only applicable to Vulkan, defaulting to 1");
+            m_Desc.framesInFlight = 1;
+        }
+    }
+    else if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
+    {
+        if (m_Desc.framesInFlight < 1 || m_Desc.framesInFlight > 3)
+        {
+            AE_LOG(AE_WARNING, "framesInFlight must be between 1 and 3, clamping to valid range");
+            m_Desc.framesInFlight = std::clamp(m_Desc.framesInFlight, 1u, 3u);
+        }
+    }
+
     try
     {
         if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
@@ -184,51 +202,25 @@ void ae::Window::Destroy()
     m_pWindow = nullptr;
 }
 
-void ae::Window::Clear() const
-{
-#ifdef AE_DEBUG
-    if (!m_Created)
-    {
-        AE_LOG(AE_WARNING, "Tried to clear window but it is not created");
-        return;
-    }
-#endif // AE_DEBUG
-    if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
-    {
-        GL_CHECK(glClearColor(m_ClearColor[0], m_ClearColor[1], m_ClearColor[2], m_ClearColor[3]));
-        GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-    }
-    else if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
-    {
-#ifdef AE_VULKAN
-        std::shared_ptr<ae::VulkanContext> pContext = std::dynamic_pointer_cast<ae::VulkanContext>(m_pContext);
-#ifdef AE_DEBUG
-        if (!pContext)
-        {
-            AE_THROW_RUNTIME_ERROR("Failed to create Vulkan context, context is not Vulkan");
-        }
-#endif // AE_DEBUG
-        pContext->WaitForPreviousFrame();
-        pContext->AquireNextImage();
-        pContext->ResetCommandBuffer();
-        pContext->BeginRenderPass();
-#else  // AE_VULKAN
-        AE_THROW_RUNTIME_ERROR(AE_VULKAN_NOT_FOUND_MESSAGE);
-#endif // AE_VULKAN
-    }
-}
-
 #undef max
 
-void ae::Window::Update()
+ae::FrameInfo ae::Window::BeginFrame()
 {
 #ifdef AE_DEBUG
     if (!m_Created)
     {
-        AE_LOG(AE_WARNING, "Tried to update window but it is not created");
-        return;
+        AE_LOG(AE_WARNING, "Tried to begin frame but window is not created");
+        return {};
+    }
+
+    if (m_FrameInProgress)
+    {
+        AE_LOG(AE_WARNING, "Tried to begin frame but a frame is already in progress");
+        return {};
     }
 #endif // AE_DEBUG
+
+    m_FrameInProgress = true;
 
     // Update previous input state before processing new events
     m_Keyboard.UpdatePreviousState();
@@ -237,35 +229,130 @@ void ae::Window::Update()
     if (m_Desc.type != WindowType::HEADLESS)
     {
         glfwPollEvents();
+    }
 
+    if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
+    {
+        GL_CHECK(glClearColor(m_ClearColor[0], m_ClearColor[1], m_ClearColor[2], m_ClearColor[3]));
+        GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        return { 0, 0, m_Desc.width, m_Desc.height };
+    }
+
+#ifdef AE_VULKAN
+    if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
+    {
+        std::shared_ptr<ae::VulkanContext> pContext = std::dynamic_pointer_cast<ae::VulkanContext>(m_pContext);
+#ifdef AE_DEBUG
+        if (!pContext)
+        {
+            AE_THROW_RUNTIME_ERROR("Vulkan context is null in BeginFrame");
+        }
+#endif // AE_DEBUG
+        return pContext->BeginFrame();
+    }
+#endif // AE_VULKAN
+
+    return {};
+}
+
+void ae::Window::EndFrame()
+{
+    if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
+    {
+        EndFrameOpenGL();
+    }
+#ifdef AE_VULKAN
+    else if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
+    {
+        EndFrameVulkan(nullptr, 0);
+    }
+#endif // AE_VULKAN
+}
+
+#ifdef AE_VULKAN
+void ae::Window::EndFrame(std::initializer_list<VkCommandBuffer> commandBuffers)
+{
+    EndFrameVulkan(commandBuffers.begin(), static_cast<uint32_t>(commandBuffers.size()));
+}
+
+void ae::Window::SetOnSwapchainRecreatedCB(const std::function<void(const VulkanResources &)> &cb)
+{
+    m_OnSwapchainRecreated = cb;
+
+    std::shared_ptr<ae::VulkanContext> pContext = std::dynamic_pointer_cast<ae::VulkanContext>(m_pContext);
+    if (pContext)
+    {
+        pContext->SetOnSwapchainRecreatedCB(cb);
+    }
+}
+#endif // AE_VULKAN
+
+void ae::Window::EndFrameOpenGL()
+{
+#ifdef AE_DEBUG
+    if (!m_FrameInProgress)
+    {
+        AE_LOG(AE_WARNING, "Tried to end frame but no frame is in progress");
+        return;
+    }
+#endif // AE_DEBUG
+
+    if (m_Desc.type != WindowType::HEADLESS)
+    {
         if (m_pInterface->HasCallback())
         {
             m_pInterface->Prepare();
             m_pInterface->Update();
             m_pInterface->Finish();
         }
+
+        glfwSwapBuffers(m_pWindow);
     }
 
+    HandleFrameTiming();
+    m_FrameInProgress = false;
+}
+
+#ifdef AE_VULKAN
+void ae::Window::EndFrameVulkan(const VkCommandBuffer *commandBuffers, uint32_t count)
+{
+#ifdef AE_DEBUG
+    if (!m_FrameInProgress)
+    {
+        AE_LOG(AE_WARNING, "Tried to end frame but no frame is in progress");
+        return;
+    }
+#endif // AE_DEBUG
+
+    std::shared_ptr<ae::VulkanContext> pContext = std::dynamic_pointer_cast<ae::VulkanContext>(m_pContext);
+#ifdef AE_DEBUG
+    if (!pContext)
+    {
+        AE_THROW_RUNTIME_ERROR("Vulkan context is null in EndFrame");
+    }
+#endif // AE_DEBUG
+
+    bool hasImGui = m_pInterface && m_pInterface->HasCallback();
+
+    if (hasImGui)
+    {
+        m_pInterface->Prepare();
+        m_pInterface->Update();
+        m_pInterface->Finish();
+    }
+
+    pContext->EndFrame(commandBuffers, count, hasImGui);
+
+    HandleFrameTiming();
+    m_FrameInProgress = false;
+}
+#endif // AE_VULKAN
+
+void ae::Window::HandleFrameTiming()
+{
     m_FrameTime = m_FrameTimer.GetElapsedTime();
     m_FrameTimeSum += m_FrameTime;
     m_TotalFrameCount++;
-
-    if (m_Desc.type != WindowType::HEADLESS)
-    {
-        if (m_Desc.graphicsAPI == GraphicsAPI::OPENGL)
-        {
-            UpdateOpenGL();
-        }
-
-        else if (m_Desc.graphicsAPI == GraphicsAPI::VULKAN)
-        {
-#ifdef AE_VULKAN
-            UpdateVulkan();
-#else  // AE_VULKAN
-            AE_THROW_RUNTIME_ERROR(AE_VULKAN_NOT_FOUND_MESSAGE);
-#endif // AE_VULKAN
-        }
-    }
 
     if (!m_Desc.vsync)
     {
@@ -899,26 +986,6 @@ void ae::Window::CreateVulkan()
 }
 #endif // AE_VULKAN
 
-void ae::Window::UpdateOpenGL()
-{
-    glfwSwapBuffers(m_pWindow);
-}
-
-#ifdef AE_VULKAN
-void ae::Window::UpdateVulkan()
-{
-    std::shared_ptr<ae::VulkanContext> pContext = std::dynamic_pointer_cast<ae::VulkanContext>(m_pContext);
-#ifdef AE_DEBUG
-    if (!pContext)
-    {
-        AE_THROW_RUNTIME_ERROR("Failed to update Vulkan context, context is not Vulkan");
-    }
-#endif // AE_DEBUG
-    pContext->EndRenderPass();
-    pContext->SubmitCommandBuffer();
-    pContext->PresentImage();
-}
-#endif // AE_VULKAN
 
 void ae::Window::DestroyOpenGL()
 {
