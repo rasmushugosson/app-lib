@@ -186,6 +186,19 @@ includedirs({
 	vendor_dir .. "/toml++",  -- for <toml.hpp>
 })
 
+-- VMA (header-only utility project)
+project("VMA")
+kind("Utility")
+language("C++")
+
+files({
+	vendor_dir .. "/vma/vk_mem_alloc.h",
+})
+
+includedirs({
+	vendor_dir .. "/vma",  -- for <vk_mem_alloc.h>
+})
+
 project("App")
 kind("StaticLib")
 language("C++")
@@ -213,13 +226,14 @@ includedirs({
 	vendor_dir .. "/lua",
 	vendor_dir .. "/sol",  -- for <sol/sol.hpp>
 	vendor_dir .. "/toml++",  -- for <toml.hpp>
+	vendor_dir .. "/vma",  -- for <vk_mem_alloc.h>
 })
 
 filter("system:windows")
 includedirs({ dep_dir .. "/GLFW/include" })
 filter({})
 
-dependson({ "GLM", "Nlohmann", "Sol", "Toml" })
+dependson({ "GLM", "Nlohmann", "Sol", "Toml", "VMA" })
 
 filter("system:windows")
 links({

@@ -10,7 +10,7 @@ The APIs and libraries used are:
 [STB_Image_Write](https://github.com/nothings/stb/blob/master/stb_image_write.h),
 [STB_Vorbis](https://github.com/nothings/stb/blob/master/stb_vorbis.c),
 [Dear ImGui](https://github.com/ocornut/imgui), [OpenAL Soft](https://github.com/kcat/openal-soft), [GLM](https://github.com/g-truc/glm), [nlohmann/json](https://github.com/nlohmann/json),
-[Lua](https://www.lua.org/), [sol3](https://github.com/ThePhD/sol2) and [toml++](https://github.com/marzer/tomlplusplus).
+[Lua](https://www.lua.org/), [sol3](https://github.com/ThePhD/sol2), [toml++](https://github.com/marzer/tomlplusplus) and [VMA](https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator).
 
 This library depends on the following libraries, included as git submodules:
 - [log-lib](https://github.com/rasmushugosson/log-lib) - Logging, exceptions and timing utilities
@@ -110,7 +110,8 @@ project("YourProject")
         "path/to/app-lib/vendor/nlohmann",
         "path/to/app-lib/vendor/lua",
         "path/to/app-lib/vendor/sol",
-        "path/to/app-lib/vendor/toml++"
+        "path/to/app-lib/vendor/toml++",
+        "path/to/app-lib/vendor/vma"
     })
     links({ "App", "Lua", "ImGui", "STB", "GLAD", "Event", "Log" })
 ```
@@ -207,6 +208,7 @@ All third-party libraries included as source code have been modified to work wit
 | Lua | Source | `vendor/lua` | MIT |
 | sol3 | Header-only | `vendor/sol` | MIT |
 | toml++ | Header-only | `vendor/toml++` | MIT |
+| VMA | Header-only | `vendor/vma` | MIT |
 
 ### System Libraries (not bundled)
 
