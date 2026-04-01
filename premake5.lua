@@ -121,6 +121,7 @@ includedirs({
 	"vendor/lua",
 	"vendor/sol",
 	"vendor/toml++",
+	"vendor/vma",
 })
 
 filter("system:windows")
