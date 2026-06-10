@@ -31,6 +31,34 @@ enum class GraphicsAPI : uint8_t
     VULKAN
 };
 
+enum class DeviceFeature : uint64_t
+{
+    None = 0,
+    SampleRateShading = 1ull << 0,
+    GeometryShader = 1ull << 1,
+    TessellationShader = 1ull << 2,
+    WideLines = 1ull << 3,
+    FillModeNonSolid = 1ull << 4,
+    SamplerAnisotropy = 1ull << 5,
+    ComputeDerivatives = 1ull << 6,
+};
+
+constexpr DeviceFeature operator|(DeviceFeature a, DeviceFeature b)
+{
+    return static_cast<DeviceFeature>(static_cast<uint64_t>(a) | static_cast<uint64_t>(b));
+}
+
+constexpr DeviceFeature &operator|=(DeviceFeature &a, DeviceFeature b)
+{
+    a = a | b;
+    return a;
+}
+
+constexpr bool HasFeature(DeviceFeature set, DeviceFeature feature)
+{
+    return (static_cast<uint64_t>(set) & static_cast<uint64_t>(feature)) != 0;
+}
+
 struct WindowDesc
 {
     std::string title;
@@ -47,6 +75,7 @@ struct WindowDesc
     uint32_t framesInFlight;
     WindowType type;
     GraphicsAPI graphicsAPI;
+    DeviceFeature features = DeviceFeature::None;
 
     constexpr WindowDesc()
         : title("Untitled"), width(1280), height(720), resizable(true), minimizable(true), minimized(false),
@@ -57,18 +86,20 @@ struct WindowDesc
 
     WindowDesc(std::string_view title, uint32_t width, uint32_t height, bool resizable, bool minimizable,
                bool minimized, bool maximizable, bool maximized, uint8_t monitor, bool vsync, uint32_t fps,
-               uint32_t framesInFlight, WindowType type, GraphicsAPI graphicsAPI)
+               uint32_t framesInFlight, WindowType type, GraphicsAPI graphicsAPI,
+               DeviceFeature features = DeviceFeature::None)
         : title(title), width(width), height(height), resizable(resizable), minimizable(minimizable),
           minimized(minimized), maximizable(maximizable), maximized(maximized), monitor(monitor), vsync(vsync),
-          fps(fps), framesInFlight(framesInFlight), type(type), graphicsAPI(graphicsAPI)
+          fps(fps), framesInFlight(framesInFlight), type(type), graphicsAPI(graphicsAPI), features(features)
     {
     }
 
     WindowDesc(std::string_view title, uint32_t width, uint32_t height, uint8_t monitor, bool vsync, uint32_t fps,
-               uint32_t framesInFlight, WindowType type, GraphicsAPI graphicsAPI)
+               uint32_t framesInFlight, WindowType type, GraphicsAPI graphicsAPI,
+               DeviceFeature features = DeviceFeature::None)
         : title(title), width(width), height(height), resizable(false), minimizable(false), minimized(false),
           maximizable(false), maximized(false), monitor(monitor), vsync(vsync), fps(fps),
-          framesInFlight(framesInFlight), type(type), graphicsAPI(graphicsAPI)
+          framesInFlight(framesInFlight), type(type), graphicsAPI(graphicsAPI), features(features)
     {
     }
 };

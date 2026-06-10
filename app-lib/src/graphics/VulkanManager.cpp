@@ -4,9 +4,11 @@
 
 #include "OpenGL.h"
 #include "VulkanManager.h"
+#include "Window.h"
 
 #include <algorithm>
 #include <utility>
+#include <vector>
 
 ae::VulkanManager::VulkanManager()
     : m_ContextCount(0), m_Version("None"), m_Renderer("None"), m_Vendor("None"), m_VulkanInstance(VK_NULL_HANDLE),
@@ -35,6 +37,11 @@ void ae::VulkanManager::RemoveContext()
     {
         DestroyInstance();
     }
+}
+
+void ae::VulkanManager::RequestDeviceFeatures(DeviceFeature features)
+{
+    m_RequestedFeatures |= static_cast<uint64_t>(features);
 }
 
 void ae::VulkanManager::AddSurface(VkSurfaceKHR surface)
@@ -197,27 +204,62 @@ void ae::VulkanManager::CreateLogicalDevice()
     float queuePriority = 1.0f;
     queueCreateInfo.pQueuePriorities = &queuePriority;
 
+    VkPhysicalDeviceFeatures supportedFeatures{};
+    vkGetPhysicalDeviceFeatures(m_PhysicalDevice, &supportedFeatures);
+
+    DeviceFeature requested = static_cast<DeviceFeature>(m_RequestedFeatures);
     VkPhysicalDeviceFeatures deviceFeatures{};
+
+    auto enableFeature = [&](DeviceFeature flag, VkBool32 supported, VkBool32 &enabled, const char *name) {
+        if (!HasFeature(requested, flag))
+        {
+            return;
+        }
+
+        if (supported == VK_FALSE)
+        {
+            AE_THROW_RUNTIME_ERROR("Requested device feature '{}' is not supported by the physical device", name);
+        }
+
+        enabled = VK_TRUE;
+    };
+
+    enableFeature(DeviceFeature::SampleRateShading, supportedFeatures.sampleRateShading, deviceFeatures.sampleRateShading,
+                  "SampleRateShading");
+    enableFeature(DeviceFeature::GeometryShader, supportedFeatures.geometryShader, deviceFeatures.geometryShader,
+                  "GeometryShader");
+    enableFeature(DeviceFeature::TessellationShader, supportedFeatures.tessellationShader,
+                  deviceFeatures.tessellationShader, "TessellationShader");
+    enableFeature(DeviceFeature::WideLines, supportedFeatures.wideLines, deviceFeatures.wideLines, "WideLines");
+    enableFeature(DeviceFeature::FillModeNonSolid, supportedFeatures.fillModeNonSolid, deviceFeatures.fillModeNonSolid,
+                  "FillModeNonSolid");
+    enableFeature(DeviceFeature::SamplerAnisotropy, supportedFeatures.samplerAnisotropy, deviceFeatures.samplerAnisotropy,
+                  "SamplerAnisotropy");
+
+    std::vector<const char *> deviceExtensions(s_DeviceExtensions.begin(), s_DeviceExtensions.end());
+
+    VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR derivativesFeatures{};
+    derivativesFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR;
+
+    void *pNextChain = nullptr;
+
+    if (HasFeature(requested, DeviceFeature::ComputeDerivatives))
+    {
+        derivativesFeatures.computeDerivativeGroupQuads = VK_TRUE;
+        deviceExtensions.push_back(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
+        pNextChain = &derivativesFeatures;
+    }
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pNext = pNextChain;
     createInfo.pQueueCreateInfos = &queueCreateInfo;
     createInfo.queueCreateInfoCount = 1;
     createInfo.pEnabledFeatures = &deviceFeatures;
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(s_DeviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = s_DeviceExtensions.data();
-
-    if (!s_ValidationLayers.empty())
-    {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(s_ValidationLayers.size());
-        createInfo.ppEnabledLayerNames = s_ValidationLayers.data();
-    }
-
-    else
-    {
-        createInfo.enabledLayerCount = 0;
-        createInfo.ppEnabledLayerNames = nullptr;
-    }
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    createInfo.enabledLayerCount = 0;
+    createInfo.ppEnabledLayerNames = nullptr;
 
     if (vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device) != VK_SUCCESS)
     {

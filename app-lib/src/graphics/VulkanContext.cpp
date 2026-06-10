@@ -225,6 +225,7 @@ bool ae::VulkanContext::CreateImpl()
     m_FramesInFlight = m_Window.GetDesc().framesInFlight;
 
     VulkanManager::Get().AddContext(m_Window.GetDesc().title);
+    VulkanManager::Get().RequestDeviceFeatures(m_Window.GetDesc().features);
 
     CreateSurface();
 

@@ -6,6 +6,8 @@
 
 namespace ae
 {
+	enum class DeviceFeature : uint64_t;
+
 	class VulkanManager
 	{
 	private:
@@ -26,6 +28,8 @@ namespace ae
 
 		void AddSurface(VkSurfaceKHR surface);
 		void RemoveSurface(VkSurfaceKHR surface);
+
+		void RequestDeviceFeatures(DeviceFeature features);
 
 		inline const std::string& GetVersion() const { return m_Version; }
 		inline const std::string& GetRenderer() const { return m_Renderer; }
@@ -76,6 +80,8 @@ namespace ae
 
 		VkQueue m_GraphicsQueue;
 		uint32_t m_GraphicsQueueFamilyIndex;
+
+		uint64_t m_RequestedFeatures = 0;
 	private:
 #ifdef AE_DEBUG
 		static constexpr std::array<const char*, 1> s_ValidationLayers = { "VK_LAYER_KHRONOS_validation" };
