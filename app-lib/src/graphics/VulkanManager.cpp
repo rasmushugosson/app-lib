@@ -51,7 +51,8 @@ VkPhysicalDeviceFeatures SelectCoreFeatures(ae::DeviceFeature requested, const V
 {
     VkPhysicalDeviceFeatures enabled{};
 
-    auto enableFeature = [&](ae::DeviceFeature flag, VkBool32 isSupported, VkBool32 &out, const char *name) {
+    auto enableFeature = [&](ae::DeviceFeature flag, VkBool32 isSupported, VkBool32 &out, const char *name)
+    {
         if (!ae::HasFeature(requested, flag))
         {
             return;
@@ -63,7 +64,8 @@ VkPhysicalDeviceFeatures SelectCoreFeatures(ae::DeviceFeature requested, const V
 
     enableFeature(ae::DeviceFeature::SampleRateShading, supported.sampleRateShading, enabled.sampleRateShading,
                   "SampleRateShading");
-    enableFeature(ae::DeviceFeature::GeometryShader, supported.geometryShader, enabled.geometryShader, "GeometryShader");
+    enableFeature(ae::DeviceFeature::GeometryShader, supported.geometryShader, enabled.geometryShader,
+                  "GeometryShader");
     enableFeature(ae::DeviceFeature::TessellationShader, supported.tessellationShader, enabled.tessellationShader,
                   "TessellationShader");
     enableFeature(ae::DeviceFeature::WideLines, supported.wideLines, enabled.wideLines, "WideLines");
@@ -74,14 +76,16 @@ VkPhysicalDeviceFeatures SelectCoreFeatures(ae::DeviceFeature requested, const V
     enableFeature(ae::DeviceFeature::IndependentBlend, supported.independentBlend, enabled.independentBlend,
                   "IndependentBlend");
     enableFeature(ae::DeviceFeature::DepthClamp, supported.depthClamp, enabled.depthClamp, "DepthClamp");
-    enableFeature(ae::DeviceFeature::DepthBiasClamp, supported.depthBiasClamp, enabled.depthBiasClamp, "DepthBiasClamp");
-    enableFeature(ae::DeviceFeature::ImageCubeArray, supported.imageCubeArray, enabled.imageCubeArray, "ImageCubeArray");
+    enableFeature(ae::DeviceFeature::DepthBiasClamp, supported.depthBiasClamp, enabled.depthBiasClamp,
+                  "DepthBiasClamp");
+    enableFeature(ae::DeviceFeature::ImageCubeArray, supported.imageCubeArray, enabled.imageCubeArray,
+                  "ImageCubeArray");
     enableFeature(ae::DeviceFeature::MultiDrawIndirect, supported.multiDrawIndirect, enabled.multiDrawIndirect,
                   "MultiDrawIndirect");
     enableFeature(ae::DeviceFeature::DrawIndirectFirstInstance, supported.drawIndirectFirstInstance,
                   enabled.drawIndirectFirstInstance, "DrawIndirectFirstInstance");
-    enableFeature(ae::DeviceFeature::TextureCompressionBC, supported.textureCompressionBC,
-                  enabled.textureCompressionBC, "TextureCompressionBC");
+    enableFeature(ae::DeviceFeature::TextureCompressionBC, supported.textureCompressionBC, enabled.textureCompressionBC,
+                  "TextureCompressionBC");
     enableFeature(ae::DeviceFeature::FragmentStoresAndAtomics, supported.fragmentStoresAndAtomics,
                   enabled.fragmentStoresAndAtomics, "FragmentStoresAndAtomics");
     enableFeature(ae::DeviceFeature::VertexPipelineStoresAndAtomics, supported.vertexPipelineStoresAndAtomics,
@@ -300,7 +304,8 @@ void ae::VulkanManager::CreateLogicalDevice()
     std::vector<const char *> deviceExtensions(s_DeviceExtensions.begin(), s_DeviceExtensions.end());
 
     void *pNextChain = nullptr;
-    auto chainFeature = [&pNextChain](auto &featureStruct) {
+    auto chainFeature = [&pNextChain](auto &featureStruct)
+    {
         featureStruct.pNext = pNextChain;
         pNextChain = &featureStruct;
     };
