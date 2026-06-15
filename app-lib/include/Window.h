@@ -34,13 +34,39 @@ enum class GraphicsAPI : uint8_t
 enum class DeviceFeature : uint64_t
 {
     None = 0,
+
+    // Core
     SampleRateShading = 1ull << 0,
     GeometryShader = 1ull << 1,
     TessellationShader = 1ull << 2,
     WideLines = 1ull << 3,
     FillModeNonSolid = 1ull << 4,
     SamplerAnisotropy = 1ull << 5,
+    IndependentBlend = 1ull << 7,
+    DepthClamp = 1ull << 8,
+    DepthBiasClamp = 1ull << 9,
+    ImageCubeArray = 1ull << 10,
+    MultiDrawIndirect = 1ull << 11,
+    DrawIndirectFirstInstance = 1ull << 12,
+    TextureCompressionBC = 1ull << 13,
+    FragmentStoresAndAtomics = 1ull << 14,
+    VertexPipelineStoresAndAtomics = 1ull << 15,
+    ShaderInt64 = 1ull << 16,
+    ShaderInt16 = 1ull << 17,
+    MultiViewport = 1ull << 18,
+    LargePoints = 1ull << 19,
+
+    // Extension
     ComputeDerivatives = 1ull << 6,
+    DynamicRendering = 1ull << 20,
+    Synchronization2 = 1ull << 21,
+    PushDescriptor = 1ull << 22,
+
+    // Vulkan 1.2 promoted
+    TimelineSemaphore = 1ull << 23,
+    DescriptorIndexing = 1ull << 24,
+    BufferDeviceAddress = 1ull << 25,
+    ScalarBlockLayout = 1ull << 26,
 };
 
 constexpr DeviceFeature operator|(DeviceFeature a, DeviceFeature b)

@@ -10,6 +10,92 @@
 #include <utility>
 #include <vector>
 
+namespace
+{
+
+void RequireFeatureSupported(VkBool32 supported, const char *name)
+{
+    if (supported == VK_FALSE)
+    {
+        AE_THROW_RUNTIME_ERROR("Requested device feature '{}' is not supported by the physical device", name);
+    }
+}
+
+struct SupportedDeviceFeatures
+{
+    VkPhysicalDeviceFeatures2 features2{};
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRendering{};
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2{};
+    VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR derivatives{};
+    VkPhysicalDeviceVulkan12Features vulkan12{};
+};
+
+void QuerySupportedFeatures(VkPhysicalDevice device, SupportedDeviceFeatures &supported)
+{
+    supported.dynamicRendering.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+    supported.sync2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
+    supported.derivatives.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR;
+    supported.vulkan12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+
+    supported.dynamicRendering.pNext = &supported.sync2;
+    supported.sync2.pNext = &supported.derivatives;
+    supported.derivatives.pNext = &supported.vulkan12;
+
+    supported.features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    supported.features2.pNext = &supported.dynamicRendering;
+
+    vkGetPhysicalDeviceFeatures2(device, &supported.features2);
+}
+
+VkPhysicalDeviceFeatures SelectCoreFeatures(ae::DeviceFeature requested, const VkPhysicalDeviceFeatures &supported)
+{
+    VkPhysicalDeviceFeatures enabled{};
+
+    auto enableFeature = [&](ae::DeviceFeature flag, VkBool32 isSupported, VkBool32 &out, const char *name) {
+        if (!ae::HasFeature(requested, flag))
+        {
+            return;
+        }
+
+        RequireFeatureSupported(isSupported, name);
+        out = VK_TRUE;
+    };
+
+    enableFeature(ae::DeviceFeature::SampleRateShading, supported.sampleRateShading, enabled.sampleRateShading,
+                  "SampleRateShading");
+    enableFeature(ae::DeviceFeature::GeometryShader, supported.geometryShader, enabled.geometryShader, "GeometryShader");
+    enableFeature(ae::DeviceFeature::TessellationShader, supported.tessellationShader, enabled.tessellationShader,
+                  "TessellationShader");
+    enableFeature(ae::DeviceFeature::WideLines, supported.wideLines, enabled.wideLines, "WideLines");
+    enableFeature(ae::DeviceFeature::FillModeNonSolid, supported.fillModeNonSolid, enabled.fillModeNonSolid,
+                  "FillModeNonSolid");
+    enableFeature(ae::DeviceFeature::SamplerAnisotropy, supported.samplerAnisotropy, enabled.samplerAnisotropy,
+                  "SamplerAnisotropy");
+    enableFeature(ae::DeviceFeature::IndependentBlend, supported.independentBlend, enabled.independentBlend,
+                  "IndependentBlend");
+    enableFeature(ae::DeviceFeature::DepthClamp, supported.depthClamp, enabled.depthClamp, "DepthClamp");
+    enableFeature(ae::DeviceFeature::DepthBiasClamp, supported.depthBiasClamp, enabled.depthBiasClamp, "DepthBiasClamp");
+    enableFeature(ae::DeviceFeature::ImageCubeArray, supported.imageCubeArray, enabled.imageCubeArray, "ImageCubeArray");
+    enableFeature(ae::DeviceFeature::MultiDrawIndirect, supported.multiDrawIndirect, enabled.multiDrawIndirect,
+                  "MultiDrawIndirect");
+    enableFeature(ae::DeviceFeature::DrawIndirectFirstInstance, supported.drawIndirectFirstInstance,
+                  enabled.drawIndirectFirstInstance, "DrawIndirectFirstInstance");
+    enableFeature(ae::DeviceFeature::TextureCompressionBC, supported.textureCompressionBC,
+                  enabled.textureCompressionBC, "TextureCompressionBC");
+    enableFeature(ae::DeviceFeature::FragmentStoresAndAtomics, supported.fragmentStoresAndAtomics,
+                  enabled.fragmentStoresAndAtomics, "FragmentStoresAndAtomics");
+    enableFeature(ae::DeviceFeature::VertexPipelineStoresAndAtomics, supported.vertexPipelineStoresAndAtomics,
+                  enabled.vertexPipelineStoresAndAtomics, "VertexPipelineStoresAndAtomics");
+    enableFeature(ae::DeviceFeature::ShaderInt64, supported.shaderInt64, enabled.shaderInt64, "ShaderInt64");
+    enableFeature(ae::DeviceFeature::ShaderInt16, supported.shaderInt16, enabled.shaderInt16, "ShaderInt16");
+    enableFeature(ae::DeviceFeature::MultiViewport, supported.multiViewport, enabled.multiViewport, "MultiViewport");
+    enableFeature(ae::DeviceFeature::LargePoints, supported.largePoints, enabled.largePoints, "LargePoints");
+
+    return enabled;
+}
+
+} // namespace
+
 ae::VulkanManager::VulkanManager()
     : m_ContextCount(0), m_Version("None"), m_Renderer("None"), m_Vendor("None"), m_VulkanInstance(VK_NULL_HANDLE),
       m_PhysicalDevice(VK_NULL_HANDLE), m_Device(VK_NULL_HANDLE), m_GraphicsQueue(VK_NULL_HANDLE),
@@ -204,50 +290,103 @@ void ae::VulkanManager::CreateLogicalDevice()
     float queuePriority = 1.0f;
     queueCreateInfo.pQueuePriorities = &queuePriority;
 
-    VkPhysicalDeviceFeatures supportedFeatures{};
-    vkGetPhysicalDeviceFeatures(m_PhysicalDevice, &supportedFeatures);
-
     DeviceFeature requested = static_cast<DeviceFeature>(m_RequestedFeatures);
-    VkPhysicalDeviceFeatures deviceFeatures{};
 
-    auto enableFeature = [&](DeviceFeature flag, VkBool32 supported, VkBool32 &enabled, const char *name) {
-        if (!HasFeature(requested, flag))
-        {
-            return;
-        }
+    SupportedDeviceFeatures supported;
+    QuerySupportedFeatures(m_PhysicalDevice, supported);
 
-        if (supported == VK_FALSE)
-        {
-            AE_THROW_RUNTIME_ERROR("Requested device feature '{}' is not supported by the physical device", name);
-        }
-
-        enabled = VK_TRUE;
-    };
-
-    enableFeature(DeviceFeature::SampleRateShading, supportedFeatures.sampleRateShading, deviceFeatures.sampleRateShading,
-                  "SampleRateShading");
-    enableFeature(DeviceFeature::GeometryShader, supportedFeatures.geometryShader, deviceFeatures.geometryShader,
-                  "GeometryShader");
-    enableFeature(DeviceFeature::TessellationShader, supportedFeatures.tessellationShader,
-                  deviceFeatures.tessellationShader, "TessellationShader");
-    enableFeature(DeviceFeature::WideLines, supportedFeatures.wideLines, deviceFeatures.wideLines, "WideLines");
-    enableFeature(DeviceFeature::FillModeNonSolid, supportedFeatures.fillModeNonSolid, deviceFeatures.fillModeNonSolid,
-                  "FillModeNonSolid");
-    enableFeature(DeviceFeature::SamplerAnisotropy, supportedFeatures.samplerAnisotropy, deviceFeatures.samplerAnisotropy,
-                  "SamplerAnisotropy");
+    VkPhysicalDeviceFeatures deviceFeatures = SelectCoreFeatures(requested, supported.features2.features);
 
     std::vector<const char *> deviceExtensions(s_DeviceExtensions.begin(), s_DeviceExtensions.end());
+
+    void *pNextChain = nullptr;
+    auto chainFeature = [&pNextChain](auto &featureStruct) {
+        featureStruct.pNext = pNextChain;
+        pNextChain = &featureStruct;
+    };
 
     VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR derivativesFeatures{};
     derivativesFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR;
 
-    void *pNextChain = nullptr;
-
     if (HasFeature(requested, DeviceFeature::ComputeDerivatives))
     {
+        RequireFeatureSupported(supported.derivatives.computeDerivativeGroupQuads, "ComputeDerivatives");
         derivativesFeatures.computeDerivativeGroupQuads = VK_TRUE;
         deviceExtensions.push_back(VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME);
-        pNextChain = &derivativesFeatures;
+        chainFeature(derivativesFeatures);
+    }
+
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures{};
+    dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+
+    if (HasFeature(requested, DeviceFeature::DynamicRendering))
+    {
+        RequireFeatureSupported(supported.dynamicRendering.dynamicRendering, "DynamicRendering");
+        dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+        deviceExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        chainFeature(dynamicRenderingFeatures);
+    }
+
+    VkPhysicalDeviceSynchronization2FeaturesKHR sync2Features{};
+    sync2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
+
+    if (HasFeature(requested, DeviceFeature::Synchronization2))
+    {
+        RequireFeatureSupported(supported.sync2.synchronization2, "Synchronization2");
+        sync2Features.synchronization2 = VK_TRUE;
+        deviceExtensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+        chainFeature(sync2Features);
+    }
+
+    if (HasFeature(requested, DeviceFeature::PushDescriptor))
+    {
+        deviceExtensions.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    }
+
+    // Vulkan 1.2 promoted features share one struct, chained only if any is requested.
+    VkPhysicalDeviceVulkan12Features vulkan12Features{};
+    vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    bool useVulkan12 = false;
+
+    if (HasFeature(requested, DeviceFeature::TimelineSemaphore))
+    {
+        RequireFeatureSupported(supported.vulkan12.timelineSemaphore, "TimelineSemaphore");
+        vulkan12Features.timelineSemaphore = VK_TRUE;
+        useVulkan12 = true;
+    }
+
+    if (HasFeature(requested, DeviceFeature::DescriptorIndexing))
+    {
+        RequireFeatureSupported(supported.vulkan12.descriptorIndexing, "DescriptorIndexing");
+        vulkan12Features.descriptorIndexing = VK_TRUE;
+        vulkan12Features.runtimeDescriptorArray = supported.vulkan12.runtimeDescriptorArray;
+        vulkan12Features.descriptorBindingPartiallyBound = supported.vulkan12.descriptorBindingPartiallyBound;
+        vulkan12Features.descriptorBindingVariableDescriptorCount =
+            supported.vulkan12.descriptorBindingVariableDescriptorCount;
+        vulkan12Features.descriptorBindingSampledImageUpdateAfterBind =
+            supported.vulkan12.descriptorBindingSampledImageUpdateAfterBind;
+        vulkan12Features.shaderSampledImageArrayNonUniformIndexing =
+            supported.vulkan12.shaderSampledImageArrayNonUniformIndexing;
+        useVulkan12 = true;
+    }
+
+    if (HasFeature(requested, DeviceFeature::BufferDeviceAddress))
+    {
+        RequireFeatureSupported(supported.vulkan12.bufferDeviceAddress, "BufferDeviceAddress");
+        vulkan12Features.bufferDeviceAddress = VK_TRUE;
+        useVulkan12 = true;
+    }
+
+    if (HasFeature(requested, DeviceFeature::ScalarBlockLayout))
+    {
+        RequireFeatureSupported(supported.vulkan12.scalarBlockLayout, "ScalarBlockLayout");
+        vulkan12Features.scalarBlockLayout = VK_TRUE;
+        useVulkan12 = true;
+    }
+
+    if (useVulkan12)
+    {
+        chainFeature(vulkan12Features);
     }
 
     VkDeviceCreateInfo createInfo{};
