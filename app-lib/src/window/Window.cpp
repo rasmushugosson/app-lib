@@ -346,6 +346,21 @@ void ae::Window::EndFrameVulkan(const VkCommandBuffer *commandBuffers, uint32_t 
     HandleFrameTiming();
     m_FrameInProgress = false;
 }
+
+VkResult ae::Window::SubmitToQueue(const VkSubmitInfo &submitInfo, VkFence fence)
+{
+    return VulkanManager::Get().SubmitToQueue(submitInfo, fence);
+}
+
+VkResult ae::Window::PresentToQueue(const VkPresentInfoKHR &presentInfo)
+{
+    return VulkanManager::Get().PresentToQueue(presentInfo);
+}
+
+void ae::Window::WaitQueueIdle()
+{
+    VulkanManager::Get().WaitQueueIdle();
+}
 #endif // AE_VULKAN
 
 void ae::Window::HandleFrameTiming()

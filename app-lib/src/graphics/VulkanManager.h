@@ -4,9 +4,11 @@
 
 #include "Vulkan.h"
 
+#include <mutex>
+
 namespace ae
 {
-	enum class DeviceFeature : uint64_t;
+	class DeviceFeatures;
 
 	class VulkanManager
 	{
@@ -29,7 +31,14 @@ namespace ae
 		void AddSurface(VkSurfaceKHR surface);
 		void RemoveSurface(VkSurfaceKHR surface);
 
-		void RequestDeviceFeatures(DeviceFeature features);
+		void RequestDeviceFeatures(DeviceFeatures features);
+
+		// Externally-synchronized graphics-queue access. All submitters (app-lib's frame submit/
+		// present, ImGui single-time uploads, and the engine via Window) must route through these
+		// so the single VkQueue is never touched concurrently.
+		VkResult SubmitToQueue(const VkSubmitInfo& submitInfo, VkFence fence);
+		VkResult PresentToQueue(const VkPresentInfoKHR& presentInfo);
+		void WaitQueueIdle();
 
 		inline const std::string& GetVersion() const { return m_Version; }
 		inline const std::string& GetRenderer() const { return m_Renderer; }
@@ -80,6 +89,7 @@ namespace ae
 
 		VkQueue m_GraphicsQueue;
 		uint32_t m_GraphicsQueueFamilyIndex;
+		std::mutex m_QueueMutex;
 
 		uint64_t m_RequestedFeatures = 0;
 	private:

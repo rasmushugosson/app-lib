@@ -96,8 +96,7 @@ void ae::VulkanContext::EndFrame(const VkCommandBuffer *appCommandBuffers, uint3
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores.data();
 
-        if (vkQueueSubmit(VulkanManager::Get().GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame]) !=
-            VK_SUCCESS)
+        if (VulkanManager::Get().SubmitToQueue(submitInfo, m_InFlightFences[m_CurrentFrame]) != VK_SUCCESS)
         {
             AE_THROW_RUNTIME_ERROR("Failed to submit Vulkan command buffers");
         }
@@ -112,7 +111,7 @@ void ae::VulkanContext::EndFrame(const VkCommandBuffer *appCommandBuffers, uint3
     presentInfo.pSwapchains = &m_SwapChain;
     presentInfo.pImageIndices = &m_CurrentImageIndex;
 
-    VkResult result = vkQueuePresentKHR(VulkanManager::Get().GetGraphicsQueue(), &presentInfo);
+    VkResult result = VulkanManager::Get().PresentToQueue(presentInfo);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
     {

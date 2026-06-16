@@ -183,8 +183,8 @@ void ae::VulkanInterface::EndSingleTimeCommands(VkCommandBuffer commandBuffer)
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(VulkanManager::Get().GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(VulkanManager::Get().GetGraphicsQueue());
+    VulkanManager::Get().SubmitToQueue(submitInfo, VK_NULL_HANDLE);
+    VulkanManager::Get().WaitQueueIdle();
 
     vkFreeCommandBuffers(VulkanManager::Get().GetDevice(), pVulkanContext->GetCommandPool(), 1, &commandBuffer);
 }

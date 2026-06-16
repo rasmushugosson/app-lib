@@ -47,13 +47,13 @@ void QuerySupportedFeatures(VkPhysicalDevice device, SupportedDeviceFeatures &su
     vkGetPhysicalDeviceFeatures2(device, &supported.features2);
 }
 
-VkPhysicalDeviceFeatures SelectCoreFeatures(ae::DeviceFeature requested, const VkPhysicalDeviceFeatures &supported)
+VkPhysicalDeviceFeatures SelectCoreFeatures(ae::DeviceFeatures requested, const VkPhysicalDeviceFeatures &supported)
 {
     VkPhysicalDeviceFeatures enabled{};
 
     auto enableFeature = [&](ae::DeviceFeature flag, VkBool32 isSupported, VkBool32 &out, const char *name)
     {
-        if (!ae::HasFeature(requested, flag))
+        if (!requested.Has(flag))
         {
             return;
         }
@@ -129,9 +129,27 @@ void ae::VulkanManager::RemoveContext()
     }
 }
 
-void ae::VulkanManager::RequestDeviceFeatures(DeviceFeature features)
+void ae::VulkanManager::RequestDeviceFeatures(DeviceFeatures features)
 {
-    m_RequestedFeatures |= static_cast<uint64_t>(features);
+    m_RequestedFeatures |= features.Bits();
+}
+
+VkResult ae::VulkanManager::SubmitToQueue(const VkSubmitInfo &submitInfo, VkFence fence)
+{
+    std::scoped_lock lock(m_QueueMutex);
+    return vkQueueSubmit(m_GraphicsQueue, 1, &submitInfo, fence);
+}
+
+VkResult ae::VulkanManager::PresentToQueue(const VkPresentInfoKHR &presentInfo)
+{
+    std::scoped_lock lock(m_QueueMutex);
+    return vkQueuePresentKHR(m_GraphicsQueue, &presentInfo);
+}
+
+void ae::VulkanManager::WaitQueueIdle()
+{
+    std::scoped_lock lock(m_QueueMutex);
+    vkQueueWaitIdle(m_GraphicsQueue);
 }
 
 void ae::VulkanManager::AddSurface(VkSurfaceKHR surface)
@@ -294,7 +312,7 @@ void ae::VulkanManager::CreateLogicalDevice()
     float queuePriority = 1.0f;
     queueCreateInfo.pQueuePriorities = &queuePriority;
 
-    DeviceFeature requested = static_cast<DeviceFeature>(m_RequestedFeatures);
+    DeviceFeatures requested = DeviceFeatures::FromBits(m_RequestedFeatures);
 
     SupportedDeviceFeatures supported;
     QuerySupportedFeatures(m_PhysicalDevice, supported);
@@ -313,7 +331,7 @@ void ae::VulkanManager::CreateLogicalDevice()
     VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR derivativesFeatures{};
     derivativesFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COMPUTE_SHADER_DERIVATIVES_FEATURES_KHR;
 
-    if (HasFeature(requested, DeviceFeature::ComputeDerivatives))
+    if (requested.Has(DeviceFeature::ComputeDerivatives))
     {
         RequireFeatureSupported(supported.derivatives.computeDerivativeGroupQuads, "ComputeDerivatives");
         derivativesFeatures.computeDerivativeGroupQuads = VK_TRUE;
@@ -324,7 +342,7 @@ void ae::VulkanManager::CreateLogicalDevice()
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures{};
     dynamicRenderingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
 
-    if (HasFeature(requested, DeviceFeature::DynamicRendering))
+    if (requested.Has(DeviceFeature::DynamicRendering))
     {
         RequireFeatureSupported(supported.dynamicRendering.dynamicRendering, "DynamicRendering");
         dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
@@ -335,7 +353,7 @@ void ae::VulkanManager::CreateLogicalDevice()
     VkPhysicalDeviceSynchronization2FeaturesKHR sync2Features{};
     sync2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
 
-    if (HasFeature(requested, DeviceFeature::Synchronization2))
+    if (requested.Has(DeviceFeature::Synchronization2))
     {
         RequireFeatureSupported(supported.sync2.synchronization2, "Synchronization2");
         sync2Features.synchronization2 = VK_TRUE;
@@ -343,7 +361,7 @@ void ae::VulkanManager::CreateLogicalDevice()
         chainFeature(sync2Features);
     }
 
-    if (HasFeature(requested, DeviceFeature::PushDescriptor))
+    if (requested.Has(DeviceFeature::PushDescriptor))
     {
         deviceExtensions.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     }
@@ -353,14 +371,14 @@ void ae::VulkanManager::CreateLogicalDevice()
     vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
     bool useVulkan12 = false;
 
-    if (HasFeature(requested, DeviceFeature::TimelineSemaphore))
+    if (requested.Has(DeviceFeature::TimelineSemaphore))
     {
         RequireFeatureSupported(supported.vulkan12.timelineSemaphore, "TimelineSemaphore");
         vulkan12Features.timelineSemaphore = VK_TRUE;
         useVulkan12 = true;
     }
 
-    if (HasFeature(requested, DeviceFeature::DescriptorIndexing))
+    if (requested.Has(DeviceFeature::DescriptorIndexing))
     {
         RequireFeatureSupported(supported.vulkan12.descriptorIndexing, "DescriptorIndexing");
         vulkan12Features.descriptorIndexing = VK_TRUE;
@@ -375,14 +393,14 @@ void ae::VulkanManager::CreateLogicalDevice()
         useVulkan12 = true;
     }
 
-    if (HasFeature(requested, DeviceFeature::BufferDeviceAddress))
+    if (requested.Has(DeviceFeature::BufferDeviceAddress))
     {
         RequireFeatureSupported(supported.vulkan12.bufferDeviceAddress, "BufferDeviceAddress");
         vulkan12Features.bufferDeviceAddress = VK_TRUE;
         useVulkan12 = true;
     }
 
-    if (HasFeature(requested, DeviceFeature::ScalarBlockLayout))
+    if (requested.Has(DeviceFeature::ScalarBlockLayout))
     {
         RequireFeatureSupported(supported.vulkan12.scalarBlockLayout, "ScalarBlockLayout");
         vulkan12Features.scalarBlockLayout = VK_TRUE;
