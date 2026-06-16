@@ -26,6 +26,7 @@ struct VulkanResources
     VkFormat swapchainFormat;
     VkExtent2D swapchainExtent;
     uint32_t imageCount;
+    const VkImage *swapchainImages;
     const VkImageView *swapchainImageViews;
 };
 

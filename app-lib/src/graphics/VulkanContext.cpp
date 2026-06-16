@@ -816,6 +816,7 @@ ae::VulkanResources ae::VulkanContext::GetVulkanResources() const
     resources.swapchainFormat = m_SwapChainImageFormat;
     resources.swapchainExtent = m_SwapChainExtent;
     resources.imageCount = static_cast<uint32_t>(m_SwapChainImages.size());
+    resources.swapchainImages = m_SwapChainImages.data();
     resources.swapchainImageViews = m_SwapChainImageViews.data();
 
     return resources;
