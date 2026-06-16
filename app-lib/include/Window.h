@@ -69,20 +69,53 @@ enum class DeviceFeature : uint64_t
     ScalarBlockLayout = 1ull << 26,
 };
 
-constexpr DeviceFeature operator|(DeviceFeature a, DeviceFeature b)
+// Type-safe set of DeviceFeature flags. Combined values are held as a plain integer here, never
+// as a DeviceFeature, so no out-of-range enum casts occur. Mirrors vk::Flags / QFlags.
+class DeviceFeatures
 {
-    return static_cast<DeviceFeature>(static_cast<uint64_t>(a) | static_cast<uint64_t>(b));
-}
+  public:
+    constexpr DeviceFeatures() = default;
+    constexpr DeviceFeatures(DeviceFeature feature) : m_Bits(static_cast<uint64_t>(feature))
+    {
+    }
 
-constexpr DeviceFeature &operator|=(DeviceFeature &a, DeviceFeature b)
-{
-    a = a | b;
-    return a;
-}
+    [[nodiscard]] static constexpr DeviceFeatures FromBits(uint64_t bits)
+    {
+        return DeviceFeatures(bits);
+    }
 
-constexpr bool HasFeature(DeviceFeature set, DeviceFeature feature)
+    constexpr DeviceFeatures operator|(DeviceFeatures other) const
+    {
+        return DeviceFeatures(m_Bits | other.m_Bits);
+    }
+
+    constexpr DeviceFeatures &operator|=(DeviceFeatures other)
+    {
+        m_Bits |= other.m_Bits;
+        return *this;
+    }
+
+    [[nodiscard]] constexpr bool Has(DeviceFeature feature) const
+    {
+        return (m_Bits & static_cast<uint64_t>(feature)) != 0;
+    }
+
+    [[nodiscard]] constexpr uint64_t Bits() const
+    {
+        return m_Bits;
+    }
+
+  private:
+    constexpr explicit DeviceFeatures(uint64_t bits) : m_Bits(bits)
+    {
+    }
+
+    uint64_t m_Bits = 0;
+};
+
+constexpr DeviceFeatures operator|(DeviceFeature a, DeviceFeature b)
 {
-    return (static_cast<uint64_t>(set) & static_cast<uint64_t>(feature)) != 0;
+    return DeviceFeatures(a) | DeviceFeatures(b);
 }
 
 struct WindowDesc
@@ -101,7 +134,7 @@ struct WindowDesc
     uint32_t framesInFlight;
     WindowType type;
     GraphicsAPI graphicsAPI;
-    DeviceFeature features = DeviceFeature::None;
+    DeviceFeatures features;
 
     constexpr WindowDesc()
         : title("Untitled"), width(1280), height(720), resizable(true), minimizable(true), minimized(false),
@@ -112,8 +145,7 @@ struct WindowDesc
 
     WindowDesc(std::string_view title, uint32_t width, uint32_t height, bool resizable, bool minimizable,
                bool minimized, bool maximizable, bool maximized, uint8_t monitor, bool vsync, uint32_t fps,
-               uint32_t framesInFlight, WindowType type, GraphicsAPI graphicsAPI,
-               DeviceFeature features = DeviceFeature::None)
+               uint32_t framesInFlight, WindowType type, GraphicsAPI graphicsAPI, DeviceFeatures features = {})
         : title(title), width(width), height(height), resizable(resizable), minimizable(minimizable),
           minimized(minimized), maximizable(maximizable), maximized(maximized), monitor(monitor), vsync(vsync),
           fps(fps), framesInFlight(framesInFlight), type(type), graphicsAPI(graphicsAPI), features(features)
@@ -121,8 +153,7 @@ struct WindowDesc
     }
 
     WindowDesc(std::string_view title, uint32_t width, uint32_t height, uint8_t monitor, bool vsync, uint32_t fps,
-               uint32_t framesInFlight, WindowType type, GraphicsAPI graphicsAPI,
-               DeviceFeature features = DeviceFeature::None)
+               uint32_t framesInFlight, WindowType type, GraphicsAPI graphicsAPI, DeviceFeatures features = {})
         : title(title), width(width), height(height), resizable(false), minimizable(false), minimized(false),
           maximizable(false), maximized(false), monitor(monitor), vsync(vsync), fps(fps),
           framesInFlight(framesInFlight), type(type), graphicsAPI(graphicsAPI), features(features)
@@ -838,6 +869,11 @@ class Window
 #ifdef AE_VULKAN
     void EndFrame(std::initializer_list<VkCommandBuffer> commandBuffers);
     void SetOnSwapchainRecreatedCB(const std::function<void(const VulkanResources &)> &cb);
+
+    // Externally-synchronized access to the shared graphics queue (see VulkanManager).
+    VkResult SubmitToQueue(const VkSubmitInfo &submitInfo, VkFence fence);
+    VkResult PresentToQueue(const VkPresentInfoKHR &presentInfo);
+    void WaitQueueIdle();
 #endif
 
     void Close();
