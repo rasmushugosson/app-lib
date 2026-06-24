@@ -65,8 +65,8 @@ void ae::VulkanCheckResult(VkResult result, const std::string &call, const std::
             fileName = file.substr(lastSlash + 1);
         }
 
-        AE_THROW_RUNTIME_ERROR("Vulkan error\n\nResult: {}\nCall: {}\nFile: {}\nLine: {}", static_cast<int32_t>(result),
-                               call, fileName, line);
+        AE_THROW_VULKAN_ERROR("Vulkan error\n\nResult: {}\nCall: {}\nFile: {}\nLine: {}", static_cast<int32_t>(result),
+                              call, fileName, line);
     }
 }
 

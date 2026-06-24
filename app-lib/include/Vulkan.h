@@ -31,37 +31,20 @@ struct VulkanResources
 };
 
 uint32_t VulkanFindMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
-} // namespace ae
 
-#ifndef AE_DIST
-
-namespace ae
-{
 void VulkanCheckResult(VkResult result, const std::string &call, const std::string &file, uint32_t line);
+} // namespace ae
 
 #define VK_CHECK(x)                                                                                                    \
     {                                                                                                                  \
         VkResult err = x;                                                                                              \
         ae::VulkanCheckResult(err, #x, __FILE__, __LINE__);                                                            \
     }
-} // namespace ae
-
-#else
-
-#define VK_CHECK(x) x
-
-#endif // AE_DIST
 
 #else // AE_VULKAN
 
-#ifndef AE_DIST
+#include "Log.h"
 
-#define VK_CHECK(x) throw ae::VulkanError(__FILE__, __LINE__, std::ostringstream() << AE_VULKAN_NOT_FOUND_MESSAGE)
-
-#else
-
-#define VK_CHECK(x)
-
-#endif // AE_DIST
+#define VK_CHECK(x) AE_THROW_VULKAN_ERROR(AE_VULKAN_NOT_FOUND_MESSAGE)
 
 #endif // AE_VULKAN
