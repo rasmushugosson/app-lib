@@ -19,6 +19,7 @@ ae::ImageFile<T>::ImageFile(T *pData, uint32_t width, uint32_t height, uint32_t 
     size_t dataSize = static_cast<size_t>(width) * height * channels;
     m_Data.resize(dataSize);
     memcpy(m_Data.data(), pData, dataSize * sizeof(T));
+    SetPopulated(true);
 }
 
 template <typename T>
@@ -27,36 +28,39 @@ ae::ImageFile<T>::ImageFile(const std::vector<T> &data, uint32_t width, uint32_t
 {
     m_Data.resize(data.size());
     memcpy(m_Data.data(), data.data(), data.size() * sizeof(T));
+    SetPopulated(true);
 }
 
-template <typename T> void ae::ImageFile<T>::Export(const std::string &path) const
+template <typename T> void ae::ImageFile<T>::WriteImpl()
 {
     if (m_Data.empty())
     {
-        return;
+        AE_THROW_RUNTIME_ERROR("Failed to write ImageFile '{}', there is no image data to write", m_Path);
     }
 
-    std::string extension = path.substr(path.find_last_of('.') + 1);
+    std::string extension = m_Path.substr(m_Path.find_last_of('.') + 1);
+
+    int result = 0;
 
     if (extension == "png")
     {
-        stbi_write_png(path.c_str(), m_Width, m_Height, m_Channels, m_Data.data(),
-                       static_cast<int>(sizeof(T) * m_Width * m_Channels));
+        result = stbi_write_png(m_Path.c_str(), m_Width, m_Height, m_Channels, m_Data.data(),
+                                static_cast<int>(sizeof(T) * m_Width * m_Channels));
     }
 
     else if (extension == "jpg" || extension == "jpeg")
     {
-        stbi_write_jpg(path.c_str(), m_Width, m_Height, m_Channels, m_Data.data(), 100);
+        result = stbi_write_jpg(m_Path.c_str(), m_Width, m_Height, m_Channels, m_Data.data(), 100);
     }
 
     else if (extension == "bmp")
     {
-        stbi_write_bmp(path.c_str(), m_Width, m_Height, m_Channels, m_Data.data());
+        result = stbi_write_bmp(m_Path.c_str(), m_Width, m_Height, m_Channels, m_Data.data());
     }
 
     else if (extension == "tga")
     {
-        stbi_write_tga(path.c_str(), m_Width, m_Height, m_Channels, m_Data.data());
+        result = stbi_write_tga(m_Path.c_str(), m_Width, m_Height, m_Channels, m_Data.data());
     }
 
     else if (extension == "hdr")
@@ -70,12 +74,24 @@ template <typename T> void ae::ImageFile<T>::Export(const std::string &path) con
                 data[i] = static_cast<float>(m_Data[i]) / 255.0f;
             }
 
-            stbi_write_hdr(path.c_str(), m_Width, m_Height, m_Channels, data.data());
+            result = stbi_write_hdr(m_Path.c_str(), m_Width, m_Height, m_Channels, data.data());
         }
         else
         {
-            stbi_write_hdr(path.c_str(), m_Width, m_Height, m_Channels, const_cast<float *>(m_Data.data()));
+            result = stbi_write_hdr(m_Path.c_str(), m_Width, m_Height, m_Channels, const_cast<float *>(m_Data.data()));
         }
+    }
+
+    else
+    {
+        AE_THROW_INVALID_ARGUMENT("Failed to write ImageFile '{}', unsupported file extension '{}'. Valid image formats "
+                                  "are PNG, JPG, JPEG, BMP, TGA, HDR",
+                                  m_Path, extension);
+    }
+
+    if (result == 0)
+    {
+        AE_THROW_FILE_OPEN_ERROR("Failed to write ImageFile to '{}'", m_Path);
     }
 }
 

@@ -34,12 +34,18 @@ class File
     virtual ~File() = default;
 
     File &Read();
+    File &Write();
     void SetPath(std::string_view path);
     void SetPath(const std::string &path);
 
     [[nodiscard]] inline bool IsRead() const
     {
         return m_Read;
+    }
+
+    [[nodiscard]] inline bool IsPopulated() const
+    {
+        return m_Populated;
     }
 
     [[nodiscard]] inline const std::string &GetPath() const
@@ -52,14 +58,17 @@ class File
 
   protected:
     virtual void ReadImpl() = 0;
+    virtual void WriteImpl();
 
     void SetRead(bool read);
+    void SetPopulated(bool populated);
 
   protected:
     std::string m_Path;
 
   private:
     bool m_Read;
+    bool m_Populated;
 };
 
 class TextFile : public File
@@ -72,18 +81,21 @@ class TextFile : public File
     [[nodiscard]] inline const std::string &GetData() const
     {
 #ifdef AE_DEBUG
-        if (!IsRead())
+        if (!IsRead() && !IsPopulated())
         {
-            AE_LOG(AE_WARNING, "Tried to get data from TextFile but the content has not been read yet. Call Read() "
-                               "before attempting to retrieve data");
+            AE_LOG(AE_WARNING, "Tried to get data from TextFile but the content has not been read or populated yet. "
+                               "Call Read() or SetData() before attempting to retrieve data");
         }
 #endif // AE_DEBUG
 
         return m_Data;
     }
 
+    void SetData(std::string data);
+
   protected:
     void ReadImpl() override;
+    void WriteImpl() override;
 
   private:
     std::string m_Data;
@@ -99,18 +111,21 @@ class BinaryFile : public File
     [[nodiscard]] inline const std::vector<uint8_t> &GetData() const
     {
 #ifdef AE_DEBUG
-        if (!IsRead())
+        if (!IsRead() && !IsPopulated())
         {
-            AE_LOG(AE_WARNING, "Tried to get data from BinaryFile but the content has not been read yet. Call Read() "
-                               "before attempting to retrieve data");
+            AE_LOG(AE_WARNING, "Tried to get data from BinaryFile but the content has not been read or populated yet. "
+                               "Call Read() or SetData() before attempting to retrieve data");
         }
 #endif // AE_DEBUG
 
         return m_Data;
     }
 
+    void SetData(std::vector<uint8_t> data);
+
   protected:
     void ReadImpl() override;
+    void WriteImpl() override;
 
   private:
     std::vector<uint8_t> m_Data;
@@ -128,8 +143,6 @@ template <typename T> class ImageFile : public File
     ImageFile(const std::vector<T> &data, uint32_t width, uint32_t height, uint32_t channels);
     ~ImageFile() override = default;
 
-    void Export(const std::string &path) const;
-
     [[nodiscard]] inline uint32_t GetWidth() const
     {
         return m_Width;
@@ -145,10 +158,10 @@ template <typename T> class ImageFile : public File
     const std::vector<T> &GetData() const
     {
 #ifdef AE_DEBUG
-        if (!IsRead())
+        if (!IsRead() && !IsPopulated())
         {
-            AE_LOG(AE_WARNING, "Tried to get data from ImageFile but the content has not been read yet. Call Read() "
-                               "before attempting to retrieve data");
+            AE_LOG(AE_WARNING, "Tried to get data from ImageFile but the content has not been read or populated yet. "
+                               "Call Read() or construct from pixel data before attempting to retrieve data");
         }
 #endif // AE_DEBUG
 
@@ -157,6 +170,7 @@ template <typename T> class ImageFile : public File
 
   private:
     void ReadImpl() override;
+    void WriteImpl() override;
 
   private:
     std::vector<T> m_Data;
@@ -318,6 +332,8 @@ class JsonFile : public TextFile
     [[nodiscard]] nlohmann::json &GetJson();
     [[nodiscard]] const nlohmann::json &GetJson() const;
 
+    void SetJson(nlohmann::json json);
+
     [[nodiscard]] bool IsObject() const;
     [[nodiscard]] bool IsArray() const;
     [[nodiscard]] bool IsString() const;
@@ -331,6 +347,7 @@ class JsonFile : public TextFile
 
   protected:
     void ReadImpl() override;
+    void WriteImpl() override;
 
   private:
     std::unique_ptr<nlohmann::json> m_pJson;
@@ -349,11 +366,14 @@ class TomlFile : public TextFile
     [[nodiscard]] toml::table &GetTable();
     [[nodiscard]] const toml::table &GetTable() const;
 
+    void SetTable(toml::table table);
+
     [[nodiscard]] bool Contains(std::string_view key) const;
     [[nodiscard]] size_t Size() const;
 
   protected:
     void ReadImpl() override;
+    void WriteImpl() override;
 
   private:
     std::unique_ptr<toml::table> m_pTable;

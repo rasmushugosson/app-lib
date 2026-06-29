@@ -2,6 +2,8 @@
 
 #include "Files.h"
 
+#include <fstream>
+
 ae::JsonFile::JsonFile() : m_pJson(std::make_unique<nlohmann::json>()) {}
 
 ae::JsonFile::JsonFile(const std::string &path) : TextFile(path), m_pJson(std::make_unique<nlohmann::json>()) {}
@@ -27,12 +29,37 @@ void ae::JsonFile::ReadImpl()
     }
 }
 
+void ae::JsonFile::WriteImpl()
+{
+    std::ofstream out(m_Path);
+
+    if (!out)
+    {
+        AE_THROW_FILE_OPEN_ERROR("Failed to open file '{}' for writing", m_Path);
+    }
+
+    out << m_pJson->dump(4);
+
+    if (!out)
+    {
+        AE_THROW_FILESYSTEM_ERROR("Failed to write JSON data to file '{}'", m_Path);
+    }
+}
+
+void ae::JsonFile::SetJson(nlohmann::json json)
+{
+    *m_pJson = std::move(json);
+    SetPopulated(true);
+}
+
 nlohmann::json &ae::JsonFile::operator[](const std::string &key)
 {
 #ifdef AE_DEBUG
-    if (!IsRead())
+    if (!IsRead() && !IsPopulated())
     {
-        AE_LOG(AE_WARNING, "Tried to access JSON data but the file has not been read yet. Call Read() first");
+        AE_LOG(AE_WARNING,
+               "Tried to access JSON data but the file has not been read or populated yet. Call Read() or SetJson() "
+               "first");
     }
 #endif // AE_DEBUG
 
@@ -42,9 +69,11 @@ nlohmann::json &ae::JsonFile::operator[](const std::string &key)
 const nlohmann::json &ae::JsonFile::operator[](const std::string &key) const
 {
 #ifdef AE_DEBUG
-    if (!IsRead())
+    if (!IsRead() && !IsPopulated())
     {
-        AE_LOG(AE_WARNING, "Tried to access JSON data but the file has not been read yet. Call Read() first");
+        AE_LOG(AE_WARNING,
+               "Tried to access JSON data but the file has not been read or populated yet. Call Read() or SetJson() "
+               "first");
     }
 #endif // AE_DEBUG
 
@@ -54,9 +83,11 @@ const nlohmann::json &ae::JsonFile::operator[](const std::string &key) const
 nlohmann::json &ae::JsonFile::operator[](const char *key)
 {
 #ifdef AE_DEBUG
-    if (!IsRead())
+    if (!IsRead() && !IsPopulated())
     {
-        AE_LOG(AE_WARNING, "Tried to access JSON data but the file has not been read yet. Call Read() first");
+        AE_LOG(AE_WARNING,
+               "Tried to access JSON data but the file has not been read or populated yet. Call Read() or SetJson() "
+               "first");
     }
 #endif // AE_DEBUG
 
@@ -66,9 +97,11 @@ nlohmann::json &ae::JsonFile::operator[](const char *key)
 const nlohmann::json &ae::JsonFile::operator[](const char *key) const
 {
 #ifdef AE_DEBUG
-    if (!IsRead())
+    if (!IsRead() && !IsPopulated())
     {
-        AE_LOG(AE_WARNING, "Tried to access JSON data but the file has not been read yet. Call Read() first");
+        AE_LOG(AE_WARNING,
+               "Tried to access JSON data but the file has not been read or populated yet. Call Read() or SetJson() "
+               "first");
     }
 #endif // AE_DEBUG
 
@@ -78,9 +111,11 @@ const nlohmann::json &ae::JsonFile::operator[](const char *key) const
 nlohmann::json &ae::JsonFile::operator[](size_t index)
 {
 #ifdef AE_DEBUG
-    if (!IsRead())
+    if (!IsRead() && !IsPopulated())
     {
-        AE_LOG(AE_WARNING, "Tried to access JSON data but the file has not been read yet. Call Read() first");
+        AE_LOG(AE_WARNING,
+               "Tried to access JSON data but the file has not been read or populated yet. Call Read() or SetJson() "
+               "first");
     }
 #endif // AE_DEBUG
 
@@ -90,9 +125,11 @@ nlohmann::json &ae::JsonFile::operator[](size_t index)
 const nlohmann::json &ae::JsonFile::operator[](size_t index) const
 {
 #ifdef AE_DEBUG
-    if (!IsRead())
+    if (!IsRead() && !IsPopulated())
     {
-        AE_LOG(AE_WARNING, "Tried to access JSON data but the file has not been read yet. Call Read() first");
+        AE_LOG(AE_WARNING,
+               "Tried to access JSON data but the file has not been read or populated yet. Call Read() or SetJson() "
+               "first");
     }
 #endif // AE_DEBUG
 
@@ -102,9 +139,10 @@ const nlohmann::json &ae::JsonFile::operator[](size_t index) const
 nlohmann::json &ae::JsonFile::GetJson()
 {
 #ifdef AE_DEBUG
-    if (!IsRead())
+    if (!IsRead() && !IsPopulated())
     {
-        AE_LOG(AE_WARNING, "Tried to get JSON but the file has not been read yet. Call Read() first");
+        AE_LOG(AE_WARNING,
+               "Tried to get JSON but the file has not been read or populated yet. Call Read() or SetJson() first");
     }
 #endif // AE_DEBUG
 
@@ -114,9 +152,10 @@ nlohmann::json &ae::JsonFile::GetJson()
 const nlohmann::json &ae::JsonFile::GetJson() const
 {
 #ifdef AE_DEBUG
-    if (!IsRead())
+    if (!IsRead() && !IsPopulated())
     {
-        AE_LOG(AE_WARNING, "Tried to get JSON but the file has not been read yet. Call Read() first");
+        AE_LOG(AE_WARNING,
+               "Tried to get JSON but the file has not been read or populated yet. Call Read() or SetJson() first");
     }
 #endif // AE_DEBUG
 
