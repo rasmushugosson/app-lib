@@ -75,9 +75,7 @@ class DeviceFeatures
 {
   public:
     constexpr DeviceFeatures() = default;
-    constexpr DeviceFeatures(DeviceFeature feature) : m_Bits(static_cast<uint64_t>(feature))
-    {
-    }
+    constexpr DeviceFeatures(DeviceFeature feature) : m_Bits(static_cast<uint64_t>(feature)) {}
 
     [[nodiscard]] static constexpr DeviceFeatures FromBits(uint64_t bits)
     {
@@ -106,9 +104,7 @@ class DeviceFeatures
     }
 
   private:
-    constexpr explicit DeviceFeatures(uint64_t bits) : m_Bits(bits)
-    {
-    }
+    constexpr explicit DeviceFeatures(uint64_t bits) : m_Bits(bits) {}
 
     uint64_t m_Bits = 0;
 };

@@ -84,9 +84,10 @@ template <typename T> void ae::ImageFile<T>::WriteImpl()
 
     else
     {
-        AE_THROW_INVALID_ARGUMENT("Failed to write ImageFile '{}', unsupported file extension '{}'. Valid image formats "
-                                  "are PNG, JPG, JPEG, BMP, TGA, HDR",
-                                  m_Path, extension);
+        AE_THROW_INVALID_ARGUMENT(
+            "Failed to write ImageFile '{}', unsupported file extension '{}'. Valid image formats "
+            "are PNG, JPG, JPEG, BMP, TGA, HDR",
+            m_Path, extension);
     }
 
     if (result == 0)
