@@ -140,6 +140,8 @@ void ae::Window::Create()
 
         ae::WindowManager::Get().AddWindow(this);
 
+        InitInput();
+
         m_Timer.Start();
         m_FrameTimer.Start();
         m_AverageTimer.Start();
@@ -1025,21 +1027,12 @@ void ae::Window::DestroyVulkan()
 
 void ae::Window::InitInput()
 {
-    uint32_t controllerIndex = 0;
-
-    while (true)
+    for (uint32_t controllerIndex = 0; controllerIndex <= GLFW_JOYSTICK_LAST; controllerIndex++)
     {
         if (ae::Controller::IsConnected(controllerIndex))
         {
             m_Controllers.emplace_back(controllerIndex);
         }
-
-        else
-        {
-            break;
-        }
-
-        controllerIndex++;
     }
 
     AE_LOG(AE_TRACE, "Controllers connected: {}", m_Controllers.size());
@@ -1347,6 +1340,27 @@ void ae::Window::OnWindowClose()
 
 void ae::Window::OnControllerConnected(int controllerId)
 {
+    const uint32_t id = static_cast<uint32_t>(controllerId);
+
+    // Only track gamepads (IsConnected requires a gamepad mapping), and only once.
+    if (Controller::IsConnected(id))
+    {
+        bool present = false;
+        for (const Controller &controller : m_Controllers)
+        {
+            if (controller.GetId() == id)
+            {
+                present = true;
+                break;
+            }
+        }
+
+        if (!present)
+        {
+            m_Controllers.emplace_back(id);
+        }
+    }
+
     ControllerConnectedEvent event(static_cast<int32_t>(controllerId));
     DispatchEvent(event);
 
@@ -1358,6 +1372,9 @@ void ae::Window::OnControllerConnected(int controllerId)
 
 void ae::Window::OnControllerDisconnected(int controllerId)
 {
+    const uint32_t id = static_cast<uint32_t>(controllerId);
+    std::erase_if(m_Controllers, [id](const Controller &controller) { return controller.GetId() == id; });
+
     ControllerDisconnectedEvent event(static_cast<int32_t>(controllerId));
     DispatchEvent(event);
 

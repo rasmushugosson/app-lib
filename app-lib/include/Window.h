@@ -671,6 +671,11 @@ class Controller
 
     [[nodiscard]] std::string GetName() const;
 
+    [[nodiscard]] inline uint32_t GetId() const
+    {
+        return m_Id;
+    }
+
     static bool IsConnected(uint32_t id);
 
   private:
