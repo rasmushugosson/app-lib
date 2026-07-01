@@ -861,6 +861,15 @@ GLFWmonitor *ae::Window::GetCurrentMonitor() const
         return GetTargetMonitor();
     }
 
+    // Wayland deliberately withholds window position, so overlap detection is impossible, and when every
+    // monitor shares a content scale there is no signal left to tell them apart. Fall back to the
+    // configured monitor: any per-monitor setting keyed off this then binds to that one monitor. This
+    // limitation must be spelled out in the display settings UI when it exists.
+    if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND)
+    {
+        return GetTargetMonitor();
+    }
+
     int windowX = 0;
     int windowY = 0;
     glfwGetWindowPos(m_pWindow, &windowX, &windowY);
