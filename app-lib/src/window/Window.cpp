@@ -679,14 +679,20 @@ glm::vec2 ae::Window::GetMonitorPhysicalSize() const
 {
     int widthMM = 0;
     int heightMM = 0;
-    glfwGetMonitorPhysicalSize(GetMonitor(), &widthMM, &heightMM);
+    glfwGetMonitorPhysicalSize(GetCurrentMonitor(), &widthMM, &heightMM);
     return { static_cast<float>(widthMM), static_cast<float>(heightMM) };
 }
 
 glm::vec2 ae::Window::GetMonitorResolution() const
 {
-    const GLFWvidmode *pVideoMode = glfwGetVideoMode(GetMonitor());
+    const GLFWvidmode *pVideoMode = glfwGetVideoMode(GetCurrentMonitor());
     return { static_cast<float>(pVideoMode->width), static_cast<float>(pVideoMode->height) };
+}
+
+std::string ae::Window::GetMonitorName() const
+{
+    const char *pName = glfwGetMonitorName(GetCurrentMonitor());
+    return pName != nullptr ? std::string(pName) : std::string();
 }
 
 void ae::Window::SetSize(uint32_t width, uint32_t height)
@@ -828,7 +834,7 @@ void ae::Window::RemoveChild(Window &child)
     }
 }
 
-GLFWmonitor *ae::Window::GetMonitor() const
+GLFWmonitor *ae::Window::GetTargetMonitor() const
 {
     int monitorCount = 0;
     GLFWmonitor **pMonitors = glfwGetMonitors(&monitorCount);
@@ -848,9 +854,61 @@ GLFWmonitor *ae::Window::GetMonitor() const
     return pMonitors[monitor];
 }
 
+GLFWmonitor *ae::Window::GetCurrentMonitor() const
+{
+    if (m_pWindow == nullptr)
+    {
+        return GetTargetMonitor();
+    }
+
+    int windowX = 0;
+    int windowY = 0;
+    glfwGetWindowPos(m_pWindow, &windowX, &windowY);
+
+    const int windowWidth = static_cast<int>(m_Desc.width);
+    const int windowHeight = static_cast<int>(m_Desc.height);
+
+    int monitorCount = 0;
+    GLFWmonitor **pMonitors = glfwGetMonitors(&monitorCount);
+    if (monitorCount == 0)
+    {
+        AE_THROW_RUNTIME_ERROR("Failed to get monitors");
+    }
+
+    GLFWmonitor *pBest = nullptr;
+    int bestOverlap = 0;
+
+    for (int i = 0; i < monitorCount; i++)
+    {
+        int monitorX = 0;
+        int monitorY = 0;
+        glfwGetMonitorPos(pMonitors[i], &monitorX, &monitorY);
+
+        const GLFWvidmode *pVideoMode = glfwGetVideoMode(pMonitors[i]);
+        if (pVideoMode == nullptr)
+        {
+            continue;
+        }
+
+        const int overlapX =
+            std::max(0, std::min(windowX + windowWidth, monitorX + pVideoMode->width) - std::max(windowX, monitorX));
+        const int overlapY =
+            std::max(0, std::min(windowY + windowHeight, monitorY + pVideoMode->height) - std::max(windowY, monitorY));
+        const int overlap = overlapX * overlapY;
+
+        if (overlap > bestOverlap)
+        {
+            bestOverlap = overlap;
+            pBest = pMonitors[i];
+        }
+    }
+
+    return pBest != nullptr ? pBest : GetTargetMonitor();
+}
+
 void ae::Window::CreateWindowed()
 {
-    GLFWmonitor *pMonitor = GetMonitor();
+    GLFWmonitor *pMonitor = GetTargetMonitor();
 
     const GLFWvidmode *pVideoMode = glfwGetVideoMode(pMonitor);
 
@@ -889,7 +947,7 @@ void ae::Window::CreateWindowed()
 
 void ae::Window::CreateFullscreen()
 {
-    GLFWmonitor *pMonitor = GetMonitor();
+    GLFWmonitor *pMonitor = GetTargetMonitor();
 
     const GLFWvidmode *pVideoMode = glfwGetVideoMode(pMonitor);
     m_Desc.width = static_cast<uint32_t>(pVideoMode->width);
@@ -944,7 +1002,7 @@ void ae::Window::CreateOpenGL()
 
     if (m_Desc.vsync)
     {
-        GLFWmonitor *pMonitor = GetMonitor();
+        GLFWmonitor *pMonitor = GetTargetMonitor();
         const GLFWvidmode *pVideoMode = glfwGetVideoMode(pMonitor);
 
         m_Desc.fps = static_cast<uint32_t>(pVideoMode->refreshRate);
@@ -1002,7 +1060,7 @@ void ae::Window::CreateVulkan()
     {
         m_Desc.vsync = false;
 
-        GLFWmonitor *pMonitor = GetMonitor();
+        GLFWmonitor *pMonitor = GetTargetMonitor();
         const GLFWvidmode *pVideoMode = glfwGetVideoMode(pMonitor);
 
         m_Desc.fps = static_cast<uint32_t>(pVideoMode->refreshRate);

@@ -1001,6 +1001,7 @@ class Window
     [[nodiscard]] glm::vec2 GetContentScale() const;
     [[nodiscard]] glm::vec2 GetMonitorPhysicalSize() const;
     [[nodiscard]] glm::vec2 GetMonitorResolution() const;
+    [[nodiscard]] std::string GetMonitorName() const;
 
     // Cursor control
     void ShowCursor();
@@ -1291,7 +1292,8 @@ class Window
     void AddChild(Window &child);
     void RemoveChild(Window &child);
 
-    GLFWmonitor *GetMonitor() const;
+    GLFWmonitor *GetTargetMonitor() const;
+    GLFWmonitor *GetCurrentMonitor() const;
 
     void CreateWindowed();
     void CreateFullscreen();
