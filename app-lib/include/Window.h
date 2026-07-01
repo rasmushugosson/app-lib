@@ -8,6 +8,7 @@
 #include <glad/glad.h>
 
 #include <GLFW/glfw3.h>
+#include <glm.hpp>
 #include <bitset>
 #include <cstdint>
 #include <functional>
@@ -481,12 +482,6 @@ enum class MouseButton : uint8_t
     BUTTON_8 = AE_MOUSE_BUTTON_8
 };
 
-struct Vec2
-{
-    float x;
-    float y;
-};
-
 class Mouse
 {
   public:
@@ -503,7 +498,7 @@ class Mouse
 
     [[nodiscard]] float GetX() const;
     [[nodiscard]] float GetY() const;
-    [[nodiscard]] Vec2 GetPosition() const;
+    [[nodiscard]] glm::vec2 GetPosition() const;
 
     void SetX(float x);
     void SetY(float y);
@@ -523,9 +518,9 @@ class Mouse
         return y;
     }
 
-    inline Vec2 GetDelta()
+    inline glm::vec2 GetDelta()
     {
-        Vec2 delta = { m_DeltaX, m_DeltaY };
+        glm::vec2 delta = { m_DeltaX, m_DeltaY };
         m_DeltaX = 0.0f;
         m_DeltaY = 0.0f;
         return delta;
@@ -545,9 +540,9 @@ class Mouse
         return y;
     }
 
-    inline Vec2 GetScroll()
+    inline glm::vec2 GetScroll()
     {
-        Vec2 scroll = { m_ScrollX, m_ScrollY };
+        glm::vec2 scroll = { m_ScrollX, m_ScrollY };
         m_ScrollX = 0.0f;
         m_ScrollY = 0.0f;
         return scroll;
@@ -652,9 +647,9 @@ class Controller
     [[nodiscard]] float GetAxis(int32_t axis) const;
     [[nodiscard]] float GetAxis(ControllerAxis axis) const;
 
-    [[nodiscard]] Vec2 GetLeftStick() const;
-    [[nodiscard]] Vec2 GetRightStick() const;
-    [[nodiscard]] Vec2 GetTriggers() const;
+    [[nodiscard]] glm::vec2 GetLeftStick() const;
+    [[nodiscard]] glm::vec2 GetRightStick() const;
+    [[nodiscard]] glm::vec2 GetTriggers() const;
 
     [[nodiscard]] float GetDeadzone() const
     {
@@ -999,9 +994,13 @@ class Window
     void SetPosition(int32_t x, int32_t y);
     [[nodiscard]] int32_t GetX() const;
     [[nodiscard]] int32_t GetY() const;
-    [[nodiscard]] Vec2 GetPosition() const;
+    [[nodiscard]] glm::vec2 GetPosition() const;
 
     void SetSize(uint32_t width, uint32_t height);
+
+    [[nodiscard]] glm::vec2 GetContentScale() const;
+    [[nodiscard]] glm::vec2 GetMonitorPhysicalSize() const;
+    [[nodiscard]] glm::vec2 GetMonitorResolution() const;
 
     // Cursor control
     void ShowCursor();
@@ -1292,7 +1291,7 @@ class Window
     void AddChild(Window &child);
     void RemoveChild(Window &child);
 
-    GLFWmonitor *GetMonitor();
+    GLFWmonitor *GetMonitor() const;
 
     void CreateWindowed();
     void CreateFullscreen();

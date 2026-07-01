@@ -70,13 +70,13 @@ float ae::Mouse::GetY() const
     return static_cast<float>(y);
 }
 
-ae::Vec2 ae::Mouse::GetPosition() const
+glm::vec2 ae::Mouse::GetPosition() const
 {
     double x;
     double y;
     glfwGetCursorPos(m_pWindow->GetWindow(), &x, &y);
 
-    return { .x = static_cast<float>(x), .y = static_cast<float>(y) };
+    return { static_cast<float>(x), static_cast<float>(y) };
 }
 
 void ae::Mouse::SetX(float x)

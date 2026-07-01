@@ -659,12 +659,34 @@ int32_t ae::Window::GetY() const
     return y;
 }
 
-ae::Vec2 ae::Window::GetPosition() const
+glm::vec2 ae::Window::GetPosition() const
 {
     int x;
     int y;
     glfwGetWindowPos(m_pWindow, &x, &y);
-    return { .x = static_cast<float>(x), .y = static_cast<float>(y) };
+    return { static_cast<float>(x), static_cast<float>(y) };
+}
+
+glm::vec2 ae::Window::GetContentScale() const
+{
+    float xScale = 1.0f;
+    float yScale = 1.0f;
+    glfwGetWindowContentScale(m_pWindow, &xScale, &yScale);
+    return { xScale, yScale };
+}
+
+glm::vec2 ae::Window::GetMonitorPhysicalSize() const
+{
+    int widthMM = 0;
+    int heightMM = 0;
+    glfwGetMonitorPhysicalSize(GetMonitor(), &widthMM, &heightMM);
+    return { static_cast<float>(widthMM), static_cast<float>(heightMM) };
+}
+
+glm::vec2 ae::Window::GetMonitorResolution() const
+{
+    const GLFWvidmode *pVideoMode = glfwGetVideoMode(GetMonitor());
+    return { static_cast<float>(pVideoMode->width), static_cast<float>(pVideoMode->height) };
 }
 
 void ae::Window::SetSize(uint32_t width, uint32_t height)
@@ -806,7 +828,7 @@ void ae::Window::RemoveChild(Window &child)
     }
 }
 
-GLFWmonitor *ae::Window::GetMonitor()
+GLFWmonitor *ae::Window::GetMonitor() const
 {
     int monitorCount = 0;
     GLFWmonitor **pMonitors = glfwGetMonitors(&monitorCount);
@@ -816,13 +838,14 @@ GLFWmonitor *ae::Window::GetMonitor()
         AE_THROW_RUNTIME_ERROR("Failed to get monitors");
     }
 
-    if (std::cmp_less_equal(monitorCount, m_Desc.monitor))
+    uint8_t monitor = m_Desc.monitor;
+    if (std::cmp_less_equal(monitorCount, monitor))
     {
         AE_LOG(AE_WARNING, "Invalid monitor index, using default monitor");
-        m_Desc.monitor = 0;
+        monitor = 0;
     }
 
-    return pMonitors[m_Desc.monitor];
+    return pMonitors[monitor];
 }
 
 void ae::Window::CreateWindowed()
