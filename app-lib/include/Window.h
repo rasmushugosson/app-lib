@@ -8,10 +8,10 @@
 #include <glad/glad.h>
 
 #include <GLFW/glfw3.h>
-#include <glm.hpp>
 #include <bitset>
 #include <cstdint>
 #include <functional>
+#include <glm.hpp>
 #include <memory>
 #include <sstream>
 #include <string>

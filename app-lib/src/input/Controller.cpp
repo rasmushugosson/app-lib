@@ -63,8 +63,7 @@ glm::vec2 ae::Controller::GetLeftStick() const
         return { 0.0f, 0.0f };
     }
 
-    return { ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]),
-             ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]) };
+    return { ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_X]), ApplyDeadzone(state.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]) };
 }
 
 glm::vec2 ae::Controller::GetRightStick() const
