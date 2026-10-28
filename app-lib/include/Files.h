@@ -22,7 +22,7 @@ std::string FormatDevPath(const std::string &path);
 #ifdef AE_DIST
 #define AE_FILE_PATH(path) std::string(path)
 #else
-#define AE_FILE_PATH(path) FormatDevPath(path)
+#define AE_FILE_PATH(path) ae::FormatDevPath(path)
 #endif // AE_DIST
 
 class File
