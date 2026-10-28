@@ -9,7 +9,6 @@ template <typename T> ae::ImageFile<T>::ImageFile() : File(), m_Data(), m_Width(
 template <typename T>
 ae::ImageFile<T>::ImageFile(const std::string &path) : File(path), m_Data(), m_Width(0), m_Height(0), m_Channels(0)
 {
-    Read();
 }
 
 template <typename T>
